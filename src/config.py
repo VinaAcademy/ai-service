@@ -22,11 +22,18 @@ class Settings(BaseSettings):
     database_url: str = "sqlite+aiosqlite:///./test.db"
     sync_database_url: str = "sqlite:///./test.db"
 
-    # LangChain
+    # LangChain / AI
     openai_api_key: str = ""
+    google_api_key: str = ""
     model_name: str = "gpt-3.5-turbo"
+    gemini_model_name: str = "gemini-2.0-flash"
     temperature: float = 0.7
     max_tokens: int = 500
+
+    # Retriever Hyperparameters
+    top_k: int = 10
+    rrf_k: int = 60
+    candidates_n: int = 20
 
     # Redis
     redis_url: Optional[str] = None

@@ -70,6 +70,7 @@ async def root():
         "docs": "/docs"
     }
 
-# TODO: Include routers sau khi tạo
-# from src.api.v1.router import api_router
-# app.include_router(api_router, prefix="/api/v1")
+
+# Include routers
+from src.api.v1.router import api_router
+app.include_router(api_router, prefix="/api/v1")

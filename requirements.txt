@@ -1,30 +1,36 @@
 # FastAPI core
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-pydantic==2.7.4
-pydantic-settings==2.10.1
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
 
-# LangChain
-langchain==1.0.2
-langchain-community==0.4.1
-langchain-openai==1.0.2
+# LangChain/AI
+langchain
+langchain-core
+langchain-community
+langchain-openai
+langchain-google-genai
+rank_bm25
+faiss-cpu
 
 # Database
-sqlalchemy[asyncio]==2.0.23
-asyncpg==0.29.0
-alembic==1.13.0
+sqlalchemy[asyncio]
+asyncpg
+alembic
 
 # Eureka Client
-py-eureka-client==0.13.2
+py-eureka-client
 
 # Utilities
-python-dotenv==1.0.0
-python-multipart==0.0.19
-httpx==0.25.2
-redis==5.0.1
-python-jose[cryptography]==3.4.0
-passlib[bcrypt]==1.7.4
+python-dotenv
+python-multipart
+httpx
+redis
+python-jose[cryptography]
+passlib[bcrypt]
+python-docx
+pandas
 
 # Testing
-pytest==7.4.3
-pytest-asyncio==0.21.1
+pytest
+pytest-asyncio
