@@ -10,3 +10,4 @@ async def get_database() -> AsyncGenerator[AsyncSession | Any, Any]:
     """
     async for session in get_db():
         yield session
+

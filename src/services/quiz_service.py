@@ -10,84 +10,21 @@ Architecture:
 import json
 import logging
 import re
-from enum import Enum
-from typing import List, Optional, Protocol
+from typing import List
 
 from langchain_core.output_parsers import PydanticOutputParser
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import ValidationError
 
 from src.config import Settings
 from src.factory.LLMFactory import LLMFactory
 from src.retriever.bm25_retrieval import BM25Retriever
 from src.retriever.dense_retrieval import DenseRetriever
 from src.retriever.fusion import RRFFusion
+from src.schemas.external.quiz_llm import QuizOutputInternal
 from src.services.prompt_service import PromptService
 from src.utils.document_utils import DocumentUtils
 
 logger = logging.getLogger(__name__)
-
-
-# =============================
-#   Enums
-# =============================
-class QuestionType(str, Enum):
-    """Question type enum matching Java QuestionType"""
-    SINGLE_CHOICE = "SINGLE_CHOICE"
-    MULTIPLE_CHOICE = "MULTIPLE_CHOICE"
-    TRUE_FALSE = "TRUE_FALSE"
-
-
-# =============================
-#   Internal Pydantic Models for LLM Parsing
-# =============================
-class AnswerInternal(BaseModel):
-    """Internal model for answer - matching Answer entity structure"""
-    answer_text: str = Field(..., description="Nội dung câu trả lời")
-    is_correct: bool = Field(..., description="True nếu đây là đáp án đúng, False nếu sai")
-
-
-class QuestionInternal(BaseModel):
-    """Internal model for question - matching Question entity structure"""
-    question_text: str = Field(..., description="Nội dung câu hỏi")
-    explanation: Optional[str] = Field(None, description="Giải thích cho đáp án đúng")
-    point: float = Field(default=1.0, description="Điểm số cho câu hỏi")
-    question_type: QuestionType = Field(
-        default=QuestionType.SINGLE_CHOICE,
-        description="Loại câu hỏi: SINGLE_CHOICE, MULTIPLE_CHOICE, hoặc TRUE_FALSE"
-    )
-    answers: List[AnswerInternal] = Field(..., description="Danh sách các câu trả lời")
-
-
-class QuizOutputInternal(BaseModel):
-    """Internal model for quiz output from LLM"""
-    data: List[QuestionInternal]
-
-
-# =============================
-#   Protocols (Interfaces)
-# =============================
-class DocumentLoaderProtocol(Protocol):
-    """Protocol for document loading"""
-
-    def load(self, url: str) -> List[dict]:
-        """Load document from URL and return passages"""
-        ...
-
-
-class RetrieverProtocol(Protocol):
-    """Protocol for retrieval operations"""
-
-    def retrieve(self, query: str, top_k: int) -> List[str]:
-        """Retrieve relevant passages for a query"""
-        ...
-
-
-class MCQGeneratorProtocol(Protocol):
-    """Protocol for MCQ generation"""
-
-    def generate(self, context: str, query: str, skill: str) -> QuizOutputInternal:
-        """Generate quiz questions from context"""
-        ...
 
 
 # =============================
@@ -209,7 +146,7 @@ class MCQGenerator:
             ValueError: If parsing fails after all attempts
         """
         # Check for truncated response
-        if self._is_truncated(content):
+        if MCQGenerator._is_truncated(content):
             logger.error("LLM response appears to be truncated (incomplete JSON)")
             raise ValueError(
                 "LLM response was truncated. Try requesting fewer questions or increase max_tokens."
@@ -255,13 +192,14 @@ class MCQGenerator:
             logger.debug(f"Raw content was: {content[:500]}...")
             raise ValueError(f"Failed to parse LLM output: {e}")
 
-    def _is_truncated(self, content: str) -> bool:
+    @staticmethod
+    def _is_truncated(content: str) -> bool:
         """
         Check if the LLM response appears to be truncated.
-        
+
         Args:
             content: Raw LLM output string
-            
+
         Returns:
             True if response appears truncated
         """

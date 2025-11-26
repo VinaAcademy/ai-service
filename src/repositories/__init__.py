@@ -1,10 +1,8 @@
 """
 Repository package - Data access layer
 """
-from src.repositories.chat_history_repo import ChatHistoryRepository
-from src.repositories.course_document_repo import CourseDocumentRepository
+from src.repositories.base_repo import BaseRepository
 
 __all__ = [
-    'ChatHistoryRepository',
-    'CourseDocumentRepository'
+    'BaseRepository',
 ]
