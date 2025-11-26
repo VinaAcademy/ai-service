@@ -10,13 +10,18 @@ langchain-core
 langchain-community
 langchain-openai
 langchain-google-genai
+langchain-huggingface
+
 rank_bm25
 faiss-cpu
+tiktoken
+sentence-transformers
 
 # Database
 sqlalchemy[asyncio]
 asyncpg
 alembic
+pgvector
 
 # Eureka Client
 py-eureka-client

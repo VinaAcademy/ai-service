@@ -2,16 +2,17 @@ import logging
 from typing import List
 
 import requests
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 
-from src.api.v1.schemas import (
+from src.schemas.quiz import (
     CreateQuizRequest,
     CreateQuizResponse,
     Question,
     Answer,
     QuestionType,
 )
-from src.services.mcq_generator import QuizService
+from src.services.quiz_service import QuizService
+from src.dependencies.services import get_quiz_service
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +25,10 @@ router = APIRouter(prefix="/quiz", tags=["Quiz"])
     summary="Create Quiz Questions",
     description="Generate quiz questions from a document based on the provided prompt and skills."
 )
-async def create_quiz(request: CreateQuizRequest) -> CreateQuizResponse:
+async def create_quiz(
+        request: CreateQuizRequest,
+        quiz_service: QuizService = Depends(get_quiz_service)
+) -> CreateQuizResponse:
     """
     Create quiz questions from a document.
     
@@ -37,14 +41,14 @@ async def create_quiz(request: CreateQuizRequest) -> CreateQuizResponse:
     """
     try:
         logger.info(f"Received quiz creation request - Prompt: {request.prompt[:50]}...")
-        
-        # Generate quiz questions
-        questions_data = await QuizService.generate_quiz(
+
+        # Generate quiz questions using injected service
+        questions_data = await quiz_service.generate_quiz(
             prompt=request.prompt,
             skills=request.skills,
             document_url=request.document_url
         )
-        
+
         # Convert to response schema
         questions = [
             Question(
@@ -60,29 +64,29 @@ async def create_quiz(request: CreateQuizRequest) -> CreateQuizResponse:
                 ]
             ) for q in questions_data
         ]
-        
+
         logger.info(f"Successfully generated {len(questions)} questions")
-        
+
         return CreateQuizResponse(
             success=True,
             message=f"Successfully generated {len(questions)} questions",
             data=questions
         )
-        
+
     except requests.exceptions.RequestException as e:
-        logger.error(f"Failed to fetch document: {e}")
+        logger.error(f"Failed to fetch document: {e.__cause__}")
         raise HTTPException(
             status_code=400,
             detail=f"Failed to fetch document from URL: {str(e)}"
         )
     except ValueError as e:
-        logger.error(f"Document processing error: {e}")
+        logger.error(f"Document processing error: {e.__cause__}")
         raise HTTPException(
             status_code=400,
             detail=f"Document processing error: {str(e)}"
         )
     except Exception as e:
-        logger.error(f"Quiz generation failed: {e}")
+        logger.error(f"Quiz generation failed: {e.__cause__}")
         raise HTTPException(
             status_code=500,
             detail=f"Quiz generation failed: {str(e)}"

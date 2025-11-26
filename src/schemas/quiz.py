@@ -38,7 +38,7 @@ class Question(BaseModel):
     explanation: Optional[str] = Field(None, description="Explanation for the correct answer")
     point: float = Field(default=1.0, description="Point value for the question")
     question_type: QuestionType = Field(
-        default=QuestionType.SINGLE_CHOICE, 
+        default=QuestionType.SINGLE_CHOICE,
         description="Type of question"
     )
     answers: List[Answer] = Field(..., description="List of possible answers")

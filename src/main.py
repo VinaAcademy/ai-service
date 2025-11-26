@@ -1,9 +1,11 @@
 import logging
+import os
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
+from starlette.responses import StreamingResponse
 
 from src.clients.eureka_client import register_with_eureka, deregister_from_eureka
 from src.config import get_settings
@@ -74,3 +76,38 @@ async def root():
 # Include routers
 from src.api.v1.router import api_router
 app.include_router(api_router, prefix="/api/v1")
+# TODO: Include routers sau khi tạo
+# from src.api.v1.router import api_router
+# app.include_router(api_router, prefix="/api/v1")
+
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+# Khởi tạo mô hình
+llm = ChatGoogleGenerativeAI(
+    model=settings.openai_model_name,
+    temperature=0.7,
+    max_tokens=None,
+    timeout=None,
+    max_retries=2,
+    streaming=True,
+    google_api_key=settings.google_api_key
+)
+
+from langchain_core.messages import HumanMessage, SystemMessage
+
+
+def event_stream(prompt: str):
+    messages = [
+        SystemMessage(content="You are a helpful assistant that instructs newbie to cooking."),
+        HumanMessage(content=prompt)
+    ]
+    for chunk in llm.stream(messages):
+        yield f"data: {chunk.content}\n\n"
+
+prompt = """Cách làm bánh mì Việt Nam như thế nào?"""
+
+
+@app.get("/stream")
+def stream_response():
+    return StreamingResponse(event_stream(prompt), media_type="text/event-stream")
+

@@ -19,16 +19,24 @@ class Settings(BaseSettings):
     instance_port: int = 8000
 
     # Database
-    database_url: str = "sqlite+aiosqlite:///./test.db"
-    sync_database_url: str = "sqlite:///./test.db"
+    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/vinaacademy_chatbot"
+    sync_database_url: str = "postgresql://postgres:postgres@localhost:5432/vinaacademy_chatbot"
 
     # LangChain / AI
-    openai_api_key: str = ""
+    openai_api_key: str | None = ""
     google_api_key: str = ""
-    model_name: str = "gpt-3.5-turbo"
+    hugging_api_key: str = ""
+    llm_provider: str = "google"
+    openai_model_name: str = "gpt-3.5-turbo"
     gemini_model_name: str = "gemini-2.0-flash"
     temperature: float = 0.7
     max_tokens: int = 500
+    embedding_model: str = "text-embedding-3-small"
+
+    # RAG settings
+    vector_dimension: int = 1536  # OpenAI embedding dimension
+    retrieval_top_k: int = 5  # Number of documents to retrieve
+    similarity_threshold: float = 0.7  # Minimum similarity score
 
     # Retriever Hyperparameters
     top_k: int = 10
@@ -43,7 +51,7 @@ class Settings(BaseSettings):
     kafka_topic: str = "chatbot-events"
 
     # Logging
-    log_level: str = "INFO"
+    log_level: str = "DEBUG"
 
     class Config:
         env_file = ".env"
