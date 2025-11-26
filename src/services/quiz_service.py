@@ -118,7 +118,7 @@ class MCQGenerator:
         Returns:
             QuizOutputInternal with parsed questions
         """
-        prompt = PromptService.build_quiz_creating_prompt(context, query, skills)
+        prompt = PromptService.build_quiz_creating_prompt(context, query, skills, self._format_instructions)
 
         logger.info("Generating quiz questions via LLM...")
         raw_output = self._llm.invoke(prompt)

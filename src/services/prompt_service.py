@@ -1,16 +1,10 @@
-from typing import List
-
-from langchain_core.messages import HumanMessage, AIMessage
-from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-
-
 class PromptService:
     """
     Service quản lý prompts và templates
     """
 
     @staticmethod
-    def build_quiz_creating_prompt(context: str, query: str, skills: str) -> str:
+    def build_quiz_creating_prompt(context: str, query: str, skills: str, instructions: str) -> str:
         """Build the prompt for MCQ generation"""
         return f"""Bạn là Giảng viên có học vị Tiến sĩ, chuyên gia tạo các bộ câu hỏi để kiểm tra kiến thức của sinh viên.
 
@@ -32,7 +26,7 @@ class PromptService:
     NỘI DUNG BÀI HỌC:
     {context}
 
-    {self._format_instructions}
+    {instructions}
 
     VÍ DỤ OUTPUT ĐÚNG ĐỊNH DẠNG:
     ```json
