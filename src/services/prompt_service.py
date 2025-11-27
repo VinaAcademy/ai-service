@@ -1,3 +1,8 @@
+from typing import List
+
+from src.model import Lesson
+
+
 class PromptService:
     """
     Service quản lý prompts và templates
@@ -49,3 +54,54 @@ class PromptService:
     ```
 
     CHỈ TRẢ VỀ JSON, KHÔNG CÓ TEXT KHÁC."""
+
+    @staticmethod
+    def build_course_context(lessons_context: List[dict], quiz: Lesson) -> str:
+        """
+        Build a context string from course/section/lesson information.
+
+        Args:
+            lessons_context: List of dicts with course, section, and lesson info
+            quiz: The quiz Lesson object
+
+        Returns:
+            Formatted context string for LLM
+        """
+        if not lessons_context:
+            return f"Quiz: {quiz.title}"
+
+        # Extract course info from first item (same for all)
+        first = lessons_context[0]
+
+        context_parts = [
+            f"=== THÔNG TIN KHÓA HỌC ===",
+            f"Tên khóa học: {first.get('course_name', 'N/A')}",
+            f"Mô tả khóa học: {first.get('course_description', 'N/A')}",
+            f"Ngôn ngữ: {first.get('course_language', 'N/A')}",
+            f"Cấp độ: {first.get('course_level', 'N/A')}",
+            "",
+            f"=== THÔNG TIN SECTION ===",
+            f"Tên section: {first.get('section_title', 'N/A')}",
+            "",
+            f"=== DANH SÁCH BÀI HỌC TRONG SECTION ===",
+        ]
+
+        for lesson in lessons_context:
+            if lesson.get('lesson_id'):
+                lesson_info = (
+                    f"- {lesson.get('lesson_title', 'N/A')} "
+                    f"(Loại: {lesson.get('lesson_type', 'N/A')})"
+                )
+                if lesson.get('lesson_description'):
+                    lesson_info += f"\n  Mô tả: {lesson.get('lesson_description')}"
+                context_parts.append(lesson_info)
+
+        context_parts.extend([
+            "",
+            f"=== QUIZ HIỆN TẠI ===",
+            f"Tên quiz: {quiz.title}",
+            f"Mô tả quiz: {quiz.description or 'N/A'}",
+            "",
+        ])
+
+        return "\n".join(context_parts)

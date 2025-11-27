@@ -1,5 +1,6 @@
 from typing import List, Optional
 from enum import Enum
+from uuid import UUID
 from pydantic import BaseModel, Field
 
 
@@ -20,7 +21,7 @@ class CreateQuizRequest(BaseModel):
     """Request schema for creating a quiz"""
     prompt: str = Field(..., description="The prompt/query for generating quiz questions")
     skills: List[str] = Field(..., description="List of skills to evaluate")
-    document_url: str = Field(..., description="URL to the document (DOCX or PDF)")
+    quiz_id: UUID = Field(..., description="UUID of the quiz lesson to generate questions for")
 
 
 # =============================

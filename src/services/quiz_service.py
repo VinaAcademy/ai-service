@@ -2,7 +2,8 @@
 Quiz Service - Generates MCQ questions from documents using Hybrid RAG.
 
 Architecture:
-    - DocumentLoader: Loads DOCX/PDF → DataFrame
+    - QuizRepository: Gets quiz by ID (Lesson with type QUIZ)
+    - LessonRepository: Gets lessons with course context
     - RetrieverFactory: Creates hybrid retriever (BM25 + Dense + RRF)
     - MCQGenerator: LLM-based question generation with Pydantic parsing
     - QuizService: Orchestrates the pipeline (injectable via FastAPI Depends)
@@ -10,19 +11,22 @@ Architecture:
 import json
 import logging
 import re
-from typing import List
+from typing import List, Optional
+from uuid import UUID
 
 from langchain_core.output_parsers import PydanticOutputParser
 from pydantic import ValidationError
 
 from src.config import Settings
 from src.factory.LLMFactory import LLMFactory
+from src.model import Lesson
 from src.retriever.bm25_retrieval import BM25Retriever
 from src.retriever.dense_retrieval import DenseRetriever
 from src.retriever.fusion import RRFFusion
 from src.schemas.external.quiz_llm import QuizOutputInternal
 from src.services.prompt_service import PromptService
-from src.utils.document_utils import DocumentUtils
+from src.repositories.quiz_repo import QuizRepository
+from src.repositories.lesson_repo import LessonRepository
 
 logger = logging.getLogger(__name__)
 
@@ -241,7 +245,7 @@ class QuizService:
     """
     Service for quiz generation operations.
     
-    Orchestrates the document loading, retrieval, and question generation pipeline.
+    Orchestrates quiz retrieval, course context loading, and question generation pipeline.
     Inject via FastAPI Depends() for proper dependency management.
     
     Example:
@@ -256,48 +260,69 @@ class QuizService:
     def __init__(
             self,
             retriever_factory: RetrieverFactory,
-            mcq_generator: MCQGenerator
+            mcq_generator: MCQGenerator,
+            quiz_repository: QuizRepository,
+            lesson_repository: LessonRepository
     ):
         self._retriever_factory = retriever_factory
         self._mcq_generator = mcq_generator
+        self._quiz_repository = quiz_repository
+        self._lesson_repository = lesson_repository
 
     async def generate_quiz(
             self,
             prompt: str,
             skills: List[str],
-            document_url: str
+            quiz_id: UUID
     ) -> List[dict]:
         """
-        Generate quiz questions from a document.
+        Generate quiz questions based on course context and save them to the database.
         
         Args:
             prompt: The prompt/query for generating quiz questions
             skills: List of skills to evaluate
-            document_url: URL to the document (DOCX or PDF)
+            quiz_id: UUID of the quiz lesson
             
         Returns:
             List of Question dicts matching the API schema
+            
+        Raises:
+            ValueError: If quiz not found or has no section
         """
-        logger.info(f"Starting quiz generation for prompt: {prompt[:50]}...")
+        logger.info(f"Starting quiz generation for quiz_id: {quiz_id}, prompt: {prompt[:50]}...")
 
-        # 1. Load document and build passages
-        context = ""
-        if document_url:
-            passages = DocumentUtils.convert_document_to_passages(document_url)
+        # 1. Get the quiz by ID
+        quiz = await self._quiz_repository.get_quiz_by_id(quiz_id)
+        if not quiz:
+            raise ValueError(f"Quiz not found with ID: {quiz_id}")
+        
+        logger.info(f"Found quiz: {quiz.title}")
 
-            # 2. Retrieve relevant passages using hybrid search
-            if passages:
-                logger.info("Retrieving relevant passages...")
-                retriever = self._retriever_factory.create(passages)
-                candidates = retriever.retrieve(prompt)
-                context = "\n".join(candidates)
-                logger.info(f"Retrieved {len(candidates)} candidate passages")
+        # 2. Get course context using lesson repository
+        section_id = quiz.section_id
+        if not section_id:
+            raise ValueError(f"Quiz {quiz_id} has no associated section")
+        
+        lessons_context = await self._lesson_repository.get_lessons_with_course_context(section_id)
+        
+        # 3. Build context string from course information
+        context = PromptService.build_course_context(list(lessons_context), quiz)
+        logger.info(f"Built course context with {len(lessons_context)} lessons")
 
-        # 3. Generate questions via LLM
+        # 4. Generate questions via LLM
         quiz_output = self._mcq_generator.generate(context=context, query=prompt, skills=", ".join(skills))
 
-        # 4. Convert to dict format matching API schema
+        # 5. Convert to dict format matching API schema
         questions_dict = quiz_output.model_dump()
-        logger.info(f"Generated {len(questions_dict['data'])} questions")
+        questions_data = questions_dict["data"]
+        logger.info(f"Generated {len(questions_data)} questions")
 
-        return questions_dict["data"]
+        # 6. Save questions to database
+        await self._quiz_repository.save_questions_to_quiz(
+            lesson_id=quiz_id,
+            questions_data=questions_data
+        )
+        await self._quiz_repository.commit()
+        logger.info(f"Saved {len(questions_data)} questions to quiz {quiz_id}")
+
+        return questions_data

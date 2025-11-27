@@ -1,7 +1,6 @@
 import logging
 from typing import List
 
-import requests
 from fastapi import APIRouter, HTTPException, Depends
 
 from src.schemas.quiz import (
@@ -23,30 +22,30 @@ router = APIRouter(prefix="/quiz", tags=["Quiz"])
     "/create",
     response_model=CreateQuizResponse,
     summary="Create Quiz Questions",
-    description="Generate quiz questions from a document based on the provided prompt and skills."
+    description="Generate quiz questions based on course context for the specified quiz."
 )
 async def create_quiz(
         request: CreateQuizRequest,
         quiz_service: QuizService = Depends(get_quiz_service)
 ) -> CreateQuizResponse:
     """
-    Create quiz questions from a document.
+    Create quiz questions from course context.
     
     - **prompt**: The prompt/query for generating quiz questions (e.g., "Tạo 10 câu hỏi về Chương 1")
     - **skills**: List of skills to evaluate (e.g., ["phân tích", "lập trình"])
-    - **document_url**: URL to the document (DOCX or PDF format supported)
+    - **quiz_id**: UUID of the quiz lesson to generate questions for
     
     Returns a list of questions with answers matching the database schema.
     AI will automatically choose appropriate question types (SINGLE_CHOICE, MULTIPLE_CHOICE, TRUE_FALSE).
     """
     try:
-        logger.info(f"Received quiz creation request - Prompt: {request.prompt[:50]}...")
+        logger.info(f"Received quiz creation request - Quiz ID: {request.quiz_id}, Prompt: {request.prompt[:50]}...")
 
         # Generate quiz questions using injected service
         questions_data = await quiz_service.generate_quiz(
             prompt=request.prompt,
             skills=request.skills,
-            document_url=request.document_url
+            quiz_id=request.quiz_id
         )
 
         # Convert to response schema
@@ -73,20 +72,14 @@ async def create_quiz(
             data=questions
         )
 
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Failed to fetch document: {e.__cause__}")
-        raise HTTPException(
-            status_code=400,
-            detail=f"Failed to fetch document from URL: {str(e)}"
-        )
     except ValueError as e:
-        logger.error(f"Document processing error: {e.__cause__}")
+        logger.error(f"Quiz or course context error: {e}")
         raise HTTPException(
             status_code=400,
-            detail=f"Document processing error: {str(e)}"
+            detail=str(e)
         )
     except Exception as e:
-        logger.error(f"Quiz generation failed: {e.__cause__}")
+        logger.error(f"Quiz generation failed: {e}")
         raise HTTPException(
             status_code=500,
             detail=f"Quiz generation failed: {str(e)}"
