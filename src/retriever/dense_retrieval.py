@@ -1,6 +1,7 @@
 import os
-import numpy as np
+
 import faiss
+import numpy as np
 from langchain_openai import OpenAIEmbeddings
 
 

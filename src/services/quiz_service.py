@@ -11,7 +11,7 @@ Architecture:
 import json
 import logging
 import re
-from typing import List, Optional
+from typing import List
 from uuid import UUID
 
 from langchain_core.output_parsers import PydanticOutputParser
@@ -19,14 +19,13 @@ from pydantic import ValidationError
 
 from src.config import Settings
 from src.factory.LLMFactory import LLMFactory
-from src.model import Lesson
+from src.repositories.lesson_repo import LessonRepository
+from src.repositories.quiz_repo import QuizRepository
 from src.retriever.bm25_retrieval import BM25Retriever
 from src.retriever.dense_retrieval import DenseRetriever
 from src.retriever.fusion import RRFFusion
 from src.schemas.external.quiz_llm import QuizOutputInternal
 from src.services.prompt_service import PromptService
-from src.repositories.quiz_repo import QuizRepository
-from src.repositories.lesson_repo import LessonRepository
 
 logger = logging.getLogger(__name__)
 

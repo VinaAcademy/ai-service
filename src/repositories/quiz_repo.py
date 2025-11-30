@@ -9,8 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from src.model.course_models import Lesson
-from src.model.quiz_models import Quiz, Question, Answer
 from src.model.enums import LessonType, QuestionType
+from src.model.quiz_models import Quiz, Question, Answer
 from src.repositories.base_repo import BaseRepository
 
 

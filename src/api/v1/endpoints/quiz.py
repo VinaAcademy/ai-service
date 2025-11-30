@@ -1,8 +1,8 @@
 import logging
-from typing import List
 
 from fastapi import APIRouter, HTTPException, Depends
 
+from src.dependencies.services import get_quiz_service
 from src.schemas.quiz import (
     CreateQuizRequest,
     CreateQuizResponse,
@@ -11,7 +11,6 @@ from src.schemas.quiz import (
     QuestionType,
 )
 from src.services.quiz_service import QuizService
-from src.dependencies.services import get_quiz_service
 
 logger = logging.getLogger(__name__)
 

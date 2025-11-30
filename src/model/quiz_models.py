@@ -2,7 +2,7 @@
 Quiz-related models matching Java entities (Quiz, Question, Answer)
 """
 from sqlalchemy import (
-    Column, String, Text, Enum as SQLEnum,
+    Column, Text, Enum as SQLEnum,
     Float, Integer, Boolean, ForeignKey
 )
 from sqlalchemy.dialects.postgresql import UUID as PGUUID

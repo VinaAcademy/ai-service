@@ -12,21 +12,21 @@ Usage in endpoints:
     ):
         return await quiz_service.generate_quiz(...)
 """
-from functools import lru_cache
 import logging
+from functools import lru_cache
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import get_settings
 from src.dependencies.db import get_database
+from src.repositories.lesson_repo import LessonRepository
+from src.repositories.quiz_repo import QuizRepository
 from src.services.quiz_service import (
     QuizService,
     RetrieverFactory,
     MCQGenerator
 )
-from src.repositories.quiz_repo import QuizRepository
-from src.repositories.lesson_repo import LessonRepository
 
 logger = logging.getLogger(__name__)
 

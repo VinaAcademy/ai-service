@@ -1,8 +1,9 @@
 import re
-import requests
 from io import BytesIO
-from docx import Document
+
 import pandas as pd
+import requests
+from docx import Document
 from langchain_community.document_loaders import PyPDFLoader
 
 
