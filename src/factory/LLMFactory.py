@@ -41,7 +41,7 @@ class LLMFactory:
         if settings.llm_provider == "openai":
             from langchain_openai import ChatOpenAI
             return ChatOpenAI(
-                model=settings.model_name,
+                model=settings.openai_model_name,
                 temperature=_temperature,
                 max_tokens=_max_tokens,
                 api_key=settings.openai_api_key,

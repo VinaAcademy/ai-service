@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     kafka_topic: str = "chatbot-events"
 
     # Logging
-    log_level: str = "DEBUG"
+    log_level: str = "INFO"
 
     class Config:
         env_file = ".env"
