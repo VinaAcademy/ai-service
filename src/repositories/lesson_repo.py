@@ -38,7 +38,7 @@ class LessonRepository(BaseRepository[Lesson]):
         query = select(self.model).where(self.model.id == id)
         
         if not include_deleted and hasattr(self.model, 'is_deleted'):
-            query = query.where(self.model.is_deleted == False)
+            query = query.where(self.model.is_deleted.is_(False))
         
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
@@ -65,7 +65,7 @@ class LessonRepository(BaseRepository[Lesson]):
         )
         
         if not include_deleted and hasattr(Lesson, 'is_deleted'):
-            query = query.where(Lesson.is_deleted == False)
+            query = query.where(Lesson.is_deleted.is_(False))
         
         result = await self.session.execute(query)
         return result.scalars().all()
@@ -120,11 +120,11 @@ class LessonRepository(BaseRepository[Lesson]):
         
         if not include_deleted:
             if hasattr(Course, 'is_deleted'):
-                query = query.where(Course.is_deleted == False)
+                query = query.where(Course.is_deleted.is_(False))
             if hasattr(Section, 'is_deleted'):
-                query = query.where(Section.is_deleted == False)
+                query = query.where(Section.is_deleted.is_(False))
             if hasattr(Lesson, 'is_deleted'):
-                query = query.where((Lesson.is_deleted == False) | (Lesson.id == None))
+                query = query.where((Lesson.is_deleted.is_(False)) | (Lesson.id.is_(None)))
         
         result = await self.session.execute(query)
         rows = result.all()
@@ -167,7 +167,7 @@ class LessonRepository(BaseRepository[Lesson]):
         )
         
         if not include_deleted and hasattr(Lesson, 'is_deleted'):
-            query = query.where(Lesson.is_deleted == False)
+            query = query.where(Lesson.is_deleted.is_(False))
         
         result = await self.session.execute(query)
         return result.scalar_one_or_none()

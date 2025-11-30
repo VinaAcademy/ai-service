@@ -74,16 +74,16 @@ class PromptService:
         first = lessons_context[0]
 
         context_parts = [
-            f"=== THÔNG TIN KHÓA HỌC ===",
+            "=== THÔNG TIN KHÓA HỌC ===",
             f"Tên khóa học: {first.get('course_name', 'N/A')}",
             f"Mô tả khóa học: {first.get('course_description', 'N/A')}",
             f"Ngôn ngữ: {first.get('course_language', 'N/A')}",
             f"Cấp độ: {first.get('course_level', 'N/A')}",
             "",
-            f"=== THÔNG TIN SECTION ===",
+            "=== THÔNG TIN SECTION ===",
             f"Tên section: {first.get('section_title', 'N/A')}",
             "",
-            f"=== DANH SÁCH BÀI HỌC TRONG SECTION ===",
+            "=== DANH SÁCH BÀI HỌC TRONG SECTION ===",
         ]
 
         for lesson in lessons_context:
@@ -98,7 +98,7 @@ class PromptService:
 
         context_parts.extend([
             "",
-            f"=== QUIZ HIỆN TẠI ===",
+            "=== QUIZ HIỆN TẠI ===",
             f"Tên quiz: {quiz.title}",
             f"Mô tả quiz: {quiz.description or 'N/A'}",
             "",

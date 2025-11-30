@@ -47,7 +47,7 @@ class QuizRepository(BaseRepository[Lesson]):
         )
         
         if not include_deleted and hasattr(Lesson, 'is_deleted'):
-            query = query.where(Lesson.is_deleted == False)
+            query = query.where(Lesson.is_deleted.is_(False))
         
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
@@ -75,7 +75,7 @@ class QuizRepository(BaseRepository[Lesson]):
         )
         
         if not include_deleted and hasattr(Lesson, 'is_deleted'):
-            query = query.where(Lesson.is_deleted == False)
+            query = query.where(Lesson.is_deleted.is_(False))
         
         result = await self.session.execute(query)
         return result.scalars().all()
@@ -106,7 +106,7 @@ class QuizRepository(BaseRepository[Lesson]):
         )
         
         if not include_deleted and hasattr(Lesson, 'is_deleted'):
-            query = query.where(Lesson.is_deleted == False)
+            query = query.where(Lesson.is_deleted.is_(False))
         
         result = await self.session.execute(query)
         return result.scalars().all()
@@ -127,7 +127,7 @@ class QuizRepository(BaseRepository[Lesson]):
         )
         
         if not include_deleted and hasattr(Lesson, 'is_deleted'):
-            query = query.where(Lesson.is_deleted == False)
+            query = query.where(Lesson.is_deleted.is_(False))
         
         result = await self.session.execute(query)
         return result.scalar() or 0
@@ -156,7 +156,7 @@ class QuizRepository(BaseRepository[Lesson]):
         )
         
         if not include_deleted and hasattr(Quiz, 'is_deleted'):
-            query = query.where(Quiz.is_deleted == False)
+            query = query.where(Quiz.is_deleted.is_(False))
         
         result = await self.session.execute(query)
         return result.scalar_one_or_none()

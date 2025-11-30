@@ -96,7 +96,7 @@ class BaseRepository(Generic[ModelType]):
         query = select(self.model).where(self.model.id == id)
         
         if not include_deleted and hasattr(self.model, 'is_deleted'):
-            query = query.where(self.model.is_deleted == False)
+            query = query.where(self.model.is_deleted.is_(False))
         
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
@@ -121,7 +121,7 @@ class BaseRepository(Generic[ModelType]):
         query = select(self.model).where(getattr(self.model, field) == value)
         
         if not include_deleted and hasattr(self.model, 'is_deleted'):
-            query = query.where(self.model.is_deleted == False)
+            query = query.where(self.model.is_deleted.is_(False))
         
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
@@ -150,7 +150,7 @@ class BaseRepository(Generic[ModelType]):
         query = select(self.model)
         
         if not include_deleted and hasattr(self.model, 'is_deleted'):
-            query = query.where(self.model.is_deleted == False)
+            query = query.where(self.model.is_deleted.is_(False))
         
         if order_by:
             order_column = getattr(self.model, order_by)
@@ -185,7 +185,7 @@ class BaseRepository(Generic[ModelType]):
         query = select(self.model).where(getattr(self.model, field) == value)
         
         if not include_deleted and hasattr(self.model, 'is_deleted'):
-            query = query.where(self.model.is_deleted == False)
+            query = query.where(self.model.is_deleted.is_(False))
         
         query = query.offset(skip).limit(limit)
         
@@ -218,7 +218,7 @@ class BaseRepository(Generic[ModelType]):
         conditions = [getattr(self.model, field) == value for field, value in filters.items()]
         
         if not include_deleted and hasattr(self.model, 'is_deleted'):
-            conditions.append(self.model.is_deleted == False)
+            conditions.append(self.model.is_deleted.is_(False))
         
         query = select(self.model).where(and_(*conditions))
         
@@ -299,7 +299,7 @@ class BaseRepository(Generic[ModelType]):
         conditions = [getattr(self.model, field) == value for field, value in filters.items()]
         
         if hasattr(self.model, 'is_deleted'):
-            conditions.append(self.model.is_deleted == False)
+            conditions.append(self.model.is_deleted.is_(False))
         
         stmt = (
             update(self.model)
@@ -441,7 +441,7 @@ class BaseRepository(Generic[ModelType]):
         query = select(func.count(self.model.id))
         
         if not include_deleted and hasattr(self.model, 'is_deleted'):
-            query = query.where(self.model.is_deleted == False)
+            query = query.where(self.model.is_deleted.is_(False))
         
         result = await self.session.execute(query)
         return result.scalar() or 0
@@ -464,7 +464,7 @@ class BaseRepository(Generic[ModelType]):
         conditions = [getattr(self.model, field) == value for field, value in filters.items()]
         
         if not include_deleted and hasattr(self.model, 'is_deleted'):
-            conditions.append(self.model.is_deleted == False)
+            conditions.append(self.model.is_deleted.is_(False))
         
         query = select(func.count(self.model.id)).where(and_(*conditions))
         
@@ -487,7 +487,7 @@ class BaseRepository(Generic[ModelType]):
         query = select(func.count(self.model.id)).where(self.model.id == id)
         
         if not include_deleted and hasattr(self.model, 'is_deleted'):
-            query = query.where(self.model.is_deleted == False)
+            query = query.where(self.model.is_deleted.is_(False))
         
         result = await self.session.execute(query)
         return (result.scalar() or 0) > 0
@@ -512,7 +512,7 @@ class BaseRepository(Generic[ModelType]):
         query = select(func.count(self.model.id)).where(getattr(self.model, field) == value)
         
         if not include_deleted and hasattr(self.model, 'is_deleted'):
-            query = query.where(self.model.is_deleted == False)
+            query = query.where(self.model.is_deleted.is_(False))
         
         result = await self.session.execute(query)
         return (result.scalar() or 0) > 0

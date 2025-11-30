@@ -53,9 +53,9 @@ class DenseRetriever:
         if self.index is None:
             self.build_index()
         q_emb = np.array([self.embedder.embed_query(query)], dtype="float32")
-        D, I = self.index.search(q_emb, min(top_k, len(self.texts)))
+        D, indices = self.index.search(q_emb, min(top_k, len(self.texts)))
         results = []
-        for rank, idx in enumerate(I[0]):
+        for rank, idx in enumerate(indices[0]):
             if 0 <= idx < len(self.texts):  # Ensure index is valid
                 results.append((idx, self.texts[idx], float(D[0][rank])))
         return results

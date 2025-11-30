@@ -6,6 +6,10 @@ from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import StreamingResponse
 
+from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_google_genai import ChatGoogleGenerativeAI
+
+from src.api.v1.router import api_router
 from src.clients.eureka_client import register_with_eureka, deregister_from_eureka
 from src.config import get_settings
 from src.db.session import init_db, close_db
@@ -73,13 +77,10 @@ async def root():
 
 
 # Include routers
-from src.api.v1.router import api_router
 app.include_router(api_router, prefix="/api/v1")
 # TODO: Include routers sau khi tạo
 # from src.api.v1.router import api_router
 # app.include_router(api_router, prefix="/api/v1")
-
-from langchain_google_genai import ChatGoogleGenerativeAI
 
 # Khởi tạo mô hình
 llm = ChatGoogleGenerativeAI(
@@ -91,8 +92,6 @@ llm = ChatGoogleGenerativeAI(
     streaming=True,
     google_api_key=settings.google_api_key
 )
-
-from langchain_core.messages import HumanMessage, SystemMessage
 
 
 def event_stream(prompt: str):
