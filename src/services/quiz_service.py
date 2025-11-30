@@ -294,16 +294,16 @@ class QuizService:
         quiz = await self._quiz_repository.get_quiz_by_id(quiz_id)
         if not quiz:
             raise ValueError(f"Quiz not found with ID: {quiz_id}")
-        
+
         logger.info(f"Found quiz: {quiz.title}")
 
         # 2. Get course context using lesson repository
         section_id = quiz.section_id
         if not section_id:
             raise ValueError(f"Quiz {quiz_id} has no associated section")
-        
+
         lessons_context = await self._lesson_repository.get_lessons_with_course_context(section_id)
-        
+
         # 3. Build context string from course information
         context = PromptService.build_course_context(list(lessons_context), quiz)
         logger.info(f"Built course context with {len(lessons_context)} lessons")

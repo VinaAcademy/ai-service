@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     # App
     app_name: str = "chatbot-service"
     app_version: str = "1.0.0"
-    app_host: str = "0.0.0.0"
+    app_host: str = "127.0.0.1"
     app_port: int = 8000
     environment: str = "development"
 

@@ -3,11 +3,10 @@ from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from fastapi import FastAPI
-from starlette.middleware.cors import CORSMiddleware
-from starlette.responses import StreamingResponse
-
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
+from starlette.middleware.cors import CORSMiddleware
+from starlette.responses import StreamingResponse
 
 from src.api.v1.router import api_router
 from src.clients.eureka_client import register_with_eureka, deregister_from_eureka
@@ -102,10 +101,10 @@ def event_stream(prompt: str):
     for chunk in llm.stream(messages):
         yield f"data: {chunk.content}\n\n"
 
+
 prompt = """Cách làm bánh mì Việt Nam như thế nào?"""
 
 
 @app.get("/stream")
 def stream_response():
     return StreamingResponse(event_stream(prompt), media_type="text/event-stream")
-

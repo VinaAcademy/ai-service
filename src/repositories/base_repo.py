@@ -48,7 +48,7 @@ class BaseRepository(Generic[ModelType]):
             db_obj = self.model(**obj_in)
         else:
             db_obj = obj_in
-        
+
         self.session.add(db_obj)
         await self.session.commit()
         await self.session.refresh(db_obj)
@@ -71,13 +71,13 @@ class BaseRepository(Generic[ModelType]):
             else:
                 db_obj = obj_in
             db_objs.append(db_obj)
-        
+
         self.session.add_all(db_objs)
         await self.session.commit()
-        
+
         for db_obj in db_objs:
             await self.session.refresh(db_obj)
-        
+
         return db_objs
 
     # ==================== READ ====================
@@ -94,18 +94,18 @@ class BaseRepository(Generic[ModelType]):
             Model instance or None if not found
         """
         query = select(self.model).where(self.model.id == id)
-        
+
         if not include_deleted and hasattr(self.model, 'is_deleted'):
             query = query.where(self.model.is_deleted.is_(False))
-        
+
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def get_by_field(
-        self, 
-        field: str, 
-        value: Any, 
-        include_deleted: bool = False
+            self,
+            field: str,
+            value: Any,
+            include_deleted: bool = False
     ) -> Optional[ModelType]:
         """
         Get a single record by a specific field value.
@@ -119,20 +119,20 @@ class BaseRepository(Generic[ModelType]):
             Model instance or None if not found
         """
         query = select(self.model).where(getattr(self.model, field) == value)
-        
+
         if not include_deleted and hasattr(self.model, 'is_deleted'):
             query = query.where(self.model.is_deleted.is_(False))
-        
+
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
     async def get_all(
-        self,
-        skip: int = 0,
-        limit: int = 100,
-        include_deleted: bool = False,
-        order_by: Optional[str] = None,
-        order_desc: bool = False
+            self,
+            skip: int = 0,
+            limit: int = 100,
+            include_deleted: bool = False,
+            order_by: Optional[str] = None,
+            order_desc: bool = False
     ) -> Sequence[ModelType]:
         """
         Get all records with pagination.
@@ -148,26 +148,26 @@ class BaseRepository(Generic[ModelType]):
             List of model instances
         """
         query = select(self.model)
-        
+
         if not include_deleted and hasattr(self.model, 'is_deleted'):
             query = query.where(self.model.is_deleted.is_(False))
-        
+
         if order_by:
             order_column = getattr(self.model, order_by)
             query = query.order_by(order_column.desc() if order_desc else order_column)
-        
+
         query = query.offset(skip).limit(limit)
-        
+
         result = await self.session.execute(query)
         return result.scalars().all()
 
     async def get_multi_by_field(
-        self,
-        field: str,
-        value: Any,
-        skip: int = 0,
-        limit: int = 100,
-        include_deleted: bool = False
+            self,
+            field: str,
+            value: Any,
+            skip: int = 0,
+            limit: int = 100,
+            include_deleted: bool = False
     ) -> Sequence[ModelType]:
         """
         Get multiple records by a specific field value.
@@ -183,23 +183,23 @@ class BaseRepository(Generic[ModelType]):
             List of model instances
         """
         query = select(self.model).where(getattr(self.model, field) == value)
-        
+
         if not include_deleted and hasattr(self.model, 'is_deleted'):
             query = query.where(self.model.is_deleted.is_(False))
-        
+
         query = query.offset(skip).limit(limit)
-        
+
         result = await self.session.execute(query)
         return result.scalars().all()
 
     async def get_by_filters(
-        self,
-        filters: dict[str, Any],
-        skip: int = 0,
-        limit: int = 100,
-        include_deleted: bool = False,
-        order_by: Optional[str] = None,
-        order_desc: bool = False
+            self,
+            filters: dict[str, Any],
+            skip: int = 0,
+            limit: int = 100,
+            include_deleted: bool = False,
+            order_by: Optional[str] = None,
+            order_desc: bool = False
     ) -> Sequence[ModelType]:
         """
         Get records matching multiple filter conditions.
@@ -216,18 +216,18 @@ class BaseRepository(Generic[ModelType]):
             List of model instances
         """
         conditions = [getattr(self.model, field) == value for field, value in filters.items()]
-        
+
         if not include_deleted and hasattr(self.model, 'is_deleted'):
             conditions.append(self.model.is_deleted.is_(False))
-        
+
         query = select(self.model).where(and_(*conditions))
-        
+
         if order_by:
             order_column = getattr(self.model, order_by)
             query = query.order_by(order_column.desc() if order_desc else order_column)
-        
+
         query = query.offset(skip).limit(limit)
-        
+
         result = await self.session.execute(query)
         return result.scalars().all()
 
@@ -247,20 +247,20 @@ class BaseRepository(Generic[ModelType]):
         db_obj = await self.get_by_id(id)
         if not db_obj:
             return None
-        
+
         for field, value in obj_in.items():
             if hasattr(db_obj, field):
                 setattr(db_obj, field, value)
-        
+
         await self.session.commit()
         await self.session.refresh(db_obj)
         return db_obj
 
     async def update_by_field(
-        self, 
-        field: str, 
-        value: Any, 
-        obj_in: dict
+            self,
+            field: str,
+            value: Any,
+            obj_in: dict
     ) -> Optional[ModelType]:
         """
         Update a record by a specific field value.
@@ -276,11 +276,11 @@ class BaseRepository(Generic[ModelType]):
         db_obj = await self.get_by_field(field, value)
         if not db_obj:
             return None
-        
+
         for f, v in obj_in.items():
             if hasattr(db_obj, f):
                 setattr(db_obj, f, v)
-        
+
         await self.session.commit()
         await self.session.refresh(db_obj)
         return db_obj
@@ -297,16 +297,16 @@ class BaseRepository(Generic[ModelType]):
             Number of records updated
         """
         conditions = [getattr(self.model, field) == value for field, value in filters.items()]
-        
+
         if hasattr(self.model, 'is_deleted'):
             conditions.append(self.model.is_deleted.is_(False))
-        
+
         stmt = (
             update(self.model)
             .where(and_(*conditions))
             .values(**obj_in)
         )
-        
+
         result = await self.session.execute(stmt)
         await self.session.commit()
         return result.rowcount
@@ -327,7 +327,7 @@ class BaseRepository(Generic[ModelType]):
         db_obj = await self.get_by_id(id, include_deleted=hard_delete)
         if not db_obj:
             return False
-        
+
         if hard_delete:
             await self.session.delete(db_obj)
         else:
@@ -335,15 +335,15 @@ class BaseRepository(Generic[ModelType]):
                 db_obj.is_deleted = True
             else:
                 await self.session.delete(db_obj)
-        
+
         await self.session.commit()
         return True
 
     async def delete_by_field(
-        self, 
-        field: str, 
-        value: Any, 
-        hard_delete: bool = False
+            self,
+            field: str,
+            value: Any,
+            hard_delete: bool = False
     ) -> bool:
         """
         Delete a record by a specific field value.
@@ -359,7 +359,7 @@ class BaseRepository(Generic[ModelType]):
         db_obj = await self.get_by_field(field, value, include_deleted=hard_delete)
         if not db_obj:
             return False
-        
+
         if hard_delete:
             await self.session.delete(db_obj)
         else:
@@ -367,14 +367,14 @@ class BaseRepository(Generic[ModelType]):
                 db_obj.is_deleted = True
             else:
                 await self.session.delete(db_obj)
-        
+
         await self.session.commit()
         return True
 
     async def bulk_delete(
-        self, 
-        filters: dict[str, Any], 
-        hard_delete: bool = False
+            self,
+            filters: dict[str, Any],
+            hard_delete: bool = False
     ) -> int:
         """
         Bulk delete records matching filter conditions.
@@ -387,7 +387,7 @@ class BaseRepository(Generic[ModelType]):
             Number of records deleted
         """
         conditions = [getattr(self.model, field) == value for field, value in filters.items()]
-        
+
         if hard_delete:
             stmt = delete(self.model).where(and_(*conditions))
         else:
@@ -399,7 +399,7 @@ class BaseRepository(Generic[ModelType]):
                 )
             else:
                 stmt = delete(self.model).where(and_(*conditions))
-        
+
         result = await self.session.execute(stmt)
         await self.session.commit()
         return result.rowcount
@@ -416,11 +416,11 @@ class BaseRepository(Generic[ModelType]):
         """
         if not hasattr(self.model, 'is_deleted'):
             return None
-        
+
         db_obj = await self.get_by_id(id, include_deleted=True)
         if not db_obj or not db_obj.is_deleted:
             return None
-        
+
         db_obj.is_deleted = False
         await self.session.commit()
         await self.session.refresh(db_obj)
@@ -439,17 +439,17 @@ class BaseRepository(Generic[ModelType]):
             Total count
         """
         query = select(func.count(self.model.id))
-        
+
         if not include_deleted and hasattr(self.model, 'is_deleted'):
             query = query.where(self.model.is_deleted.is_(False))
-        
+
         result = await self.session.execute(query)
         return result.scalar() or 0
 
     async def count_by_filters(
-        self, 
-        filters: dict[str, Any], 
-        include_deleted: bool = False
+            self,
+            filters: dict[str, Any],
+            include_deleted: bool = False
     ) -> int:
         """
         Count records matching filter conditions.
@@ -462,12 +462,12 @@ class BaseRepository(Generic[ModelType]):
             Count of matching records
         """
         conditions = [getattr(self.model, field) == value for field, value in filters.items()]
-        
+
         if not include_deleted and hasattr(self.model, 'is_deleted'):
             conditions.append(self.model.is_deleted.is_(False))
-        
+
         query = select(func.count(self.model.id)).where(and_(*conditions))
-        
+
         result = await self.session.execute(query)
         return result.scalar() or 0
 
@@ -485,18 +485,18 @@ class BaseRepository(Generic[ModelType]):
             True if exists, False otherwise
         """
         query = select(func.count(self.model.id)).where(self.model.id == id)
-        
+
         if not include_deleted and hasattr(self.model, 'is_deleted'):
             query = query.where(self.model.is_deleted.is_(False))
-        
+
         result = await self.session.execute(query)
         return (result.scalar() or 0) > 0
 
     async def exists_by_field(
-        self, 
-        field: str, 
-        value: Any, 
-        include_deleted: bool = False
+            self,
+            field: str,
+            value: Any,
+            include_deleted: bool = False
     ) -> bool:
         """
         Check if a record exists by a specific field value.
@@ -510,10 +510,10 @@ class BaseRepository(Generic[ModelType]):
             True if exists, False otherwise
         """
         query = select(func.count(self.model.id)).where(getattr(self.model, field) == value)
-        
+
         if not include_deleted and hasattr(self.model, 'is_deleted'):
             query = query.where(self.model.is_deleted.is_(False))
-        
+
         result = await self.session.execute(query)
         return (result.scalar() or 0) > 0
 
@@ -544,4 +544,3 @@ class BaseRepository(Generic[ModelType]):
         """
         await self.session.refresh(db_obj)
         return db_obj
-
