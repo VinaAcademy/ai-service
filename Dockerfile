@@ -1,62 +1,49 @@
-# --- Builder stage: build wheels / compile native extensions ---
+# Build stage - includes compilation tools
 FROM python:3.11-slim AS builder
 
-ENV PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PYTHONUNBUFFERED=1
-
+# Set working directory
 WORKDIR /app
 
-# Install build deps only in builder stage
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-      build-essential \
-      gcc \
-      g++ \
-      git \
-      curl \
-      libpq-dev \
-      libssl-dev \
-      pkg-config \
-      && rm -rf /var/lib/apt/lists/*
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy only requirements first (better cache)
+# Copy requirements and install dependencies
 COPY requirements.txt .
+RUN pip install --no-cache-dir --user -r requirements.txt
 
-# Build wheels for all requirements to avoid compiling in final image
-RUN python -m pip install --upgrade pip setuptools wheel && \
-    mkdir /wheels && \
-    pip wheel --wheel-dir /wheels -r requirements.txt
+# Runtime stage - minimal image
+FROM python:3.11-slim
 
-# Copy app source (if your build needs the source for building some extras)
+# Set working directory
+WORKDIR /app
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PATH=/root/.local/bin:$PATH
+
+# Install only runtime dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy installed packages from builder
+COPY --from=builder /root/.local /root/.local
+
+# Copy application code
 COPY . .
 
-# --- Runtime stage: minimal image ---
-FROM python:3.11-slim AS runtime
-
-ENV PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
-
-WORKDIR /app
-
-# Install only runtime OS deps (keep minimal)
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-      curl \
-      ca-certificates \
-      && rm -rf /var/lib/apt/lists/*
-
-# Copy pre-built wheels from builder and install them
-COPY --from=builder /wheels /wheels
-RUN python -m pip install --upgrade pip setuptools && \
-    pip install --no-deps --no-index --find-links=/wheels -r /app/requirements.txt || \
-    pip install --no-cache-dir --no-index --find-links=/wheels /wheels/*.whl
-
+# Expose port
 EXPOSE 8000
 
+# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD curl -f http://localhost:8000/health || exit 1
+    CMD curl -f http://localhost:8000/health || exit 1
 
+# Run the application
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
