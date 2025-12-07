@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     # App
-    app_name: str = "chatbot-service"
+    app_name: str = "ai-service"
     app_version: str = "1.0.0"
     app_host: str = "127.0.0.1"
     app_port: int = 8000
@@ -18,8 +18,8 @@ class Settings(BaseSettings):
     instance_port: int = 8000
 
     # Database
-    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/vinaacademy_chatbot"
-    sync_database_url: str = "postgresql://postgres:postgres@localhost:5432/vinaacademy_chatbot"
+    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/vinaacademy"
+    sync_database_url: str = "postgresql://postgres:postgres@localhost:5432/vinaacademy"
 
     # LangChain / AI
     openai_api_key: str | None = ""

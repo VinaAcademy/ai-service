@@ -100,7 +100,7 @@ class QuizRepository(BaseRepository[Lesson]):
         query = (
             select(Lesson)
             .where(Lesson.lesson_type == LessonType.QUIZ)
-            .order_by(Lesson.created_at.desc())
+            .order_by(Lesson.created_date.desc())
             .offset(skip)
             .limit(limit)
         )
@@ -198,7 +198,7 @@ class QuizRepository(BaseRepository[Lesson]):
         
         return quiz
 
-    async def save_questions_to_quiz(
+    async def add_questions_to_quiz(
         self,
         lesson_id: UUID,
         questions_data: List[dict]
@@ -225,9 +225,6 @@ class QuizRepository(BaseRepository[Lesson]):
         """
         # Get or create quiz details
         quiz = await self.create_or_get_quiz_details(lesson_id)
-        
-        # Clear existing questions (replace with new ones)
-        quiz.questions.clear()
         
         total_points = 0.0
         

@@ -1,22 +1,17 @@
 # FastAPI core
 fastapi
 uvicorn[standard]
-starlette
 pydantic
 pydantic-settings
 
-# LangChain/AI
-langchain
+# LangChain/AI (only used packages)
 langchain-core
 langchain-community
 langchain-openai
 langchain-google-genai
-langchain-huggingface
 
 rank_bm25
 faiss-cpu
-tiktoken
-sentence-transformers
 
 # Database
 sqlalchemy[asyncio]
@@ -31,9 +26,6 @@ py-eureka-client
 python-dotenv
 python-multipart
 httpx
-redis
-python-jose[cryptography]
-passlib[bcrypt]
 python-docx
 pandas
 

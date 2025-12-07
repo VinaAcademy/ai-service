@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  # AI Service (FastAPI)
+  ai-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-service
+    environment:
+      # App settings
+      APP_HOST: 0.0.0.0
+      APP_PORT: 8000
+      ENVIRONMENT: production
+
+      # Database
+      DATABASE_URL: postgresql+asyncpg://${DB_USERNAME:-postgres}:${DB_PASSWORD:-postgres}@${DB_HOST:-postgres}:${DB_PORT:-5432}/${POSTGRES_DB:-vinaacademy}
+      SYNC_DATABASE_URL: postgresql://${DB_USERNAME:-postgres}:${DB_PASSWORD:-postgres}@${DB_HOST:-postgres}:${DB_PORT:-5432}/${POSTGRES_DB:-vinaacademy}
+
+      # LLM API Keys (set these in .env file)
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      
+      # LLM settings
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}  # Options: openai, google
+      GEMINI_MODEL_NAME: gemini-2.0-flash
+      OPENAI_MODEL_NAME: gpt-4-turbo
+      EMBEDDING_MODEL: text-embedding-3-small
+      TEMPERATURE: 0.7
+      MAX_TOKENS: 200000
+
+      # RAG settings
+      RETRIEVAL_TOP_K: 5
+      TOP_K: 10
+      RRF_K: 60
+      CANDIDATES_N: 20
+
+      # Eureka (if using service discovery)
+      EUREKA_SERVER_URL: ${EUREKA_SERVER_URL:-http://localhost:8761/eureka/}
+      INSTANCE_HOST: ${INSTANCE_HOST:-ai-service}
+      INSTANCE_PORT: 8000
+
+      # Logging
+      LOG_LEVEL: INFO
+
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src  # Mount source for development
+      - ./alembic.ini:/app/alembic.ini
+      - faiss_data:/app/src/data  # Persist FAISS indexes
+    networks:
+      - ai-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
+      interval: 30s
+      timeout: 10s
+      start_period: 40s
+      retries: 3
+    restart: unless-stopped
+
+networks:
+  ai-network:
+    driver: bridge
+
+volumes:
+  faiss_data:
+    driver: local

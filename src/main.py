@@ -12,6 +12,7 @@ from src.api.v1.router import api_router
 from src.clients.eureka_client import register_with_eureka, deregister_from_eureka
 from src.config import get_settings
 from src.db.session import init_db, close_db
+from src.utils.exception_handlers import register_exception_handlers
 from src.utils.log import setup_logging
 
 setup_logging()
@@ -53,6 +54,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Register global exception handlers
+register_exception_handlers(app)
 
 
 # Health check

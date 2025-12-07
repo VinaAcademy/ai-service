@@ -1,3 +1,3 @@
-from src.api.v1.endpoints import quiz
+from src.api.v1.endpoints import quiz_controller
 
-__all__ = ["quiz"]
+__all__ = ["quiz_controller"]

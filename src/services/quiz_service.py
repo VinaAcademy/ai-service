@@ -109,19 +109,18 @@ class MCQGenerator:
         self._parser = PydanticOutputParser(pydantic_object=QuizOutputInternal)
         self._format_instructions = self._parser.get_format_instructions()
 
-    def generate(self, context: str, query: str, skills: str) -> QuizOutputInternal:
+    def generate(self, context: str, query: str) -> QuizOutputInternal:
         """
         Generate quiz questions from context.
         
         Args:
             context: Document content to generate questions from
             query: User's prompt specifying what questions to generate
-            skills: Skills to evaluate
             
         Returns:
             QuizOutputInternal with parsed questions
         """
-        prompt = PromptService.build_quiz_creating_prompt(context, query, skills, self._format_instructions)
+        prompt = PromptService.build_quiz_creating_prompt(context, query, self._format_instructions)
 
         logger.info("Generating quiz questions via LLM...")
         raw_output = self._llm.invoke(prompt)
@@ -271,7 +270,6 @@ class QuizService:
     async def generate_quiz(
             self,
             prompt: str,
-            skills: List[str],
             quiz_id: UUID
     ) -> List[dict]:
         """
@@ -279,7 +277,6 @@ class QuizService:
         
         Args:
             prompt: The prompt/query for generating quiz questions
-            skills: List of skills to evaluate
             quiz_id: UUID of the quiz lesson
             
         Returns:
@@ -309,7 +306,7 @@ class QuizService:
         logger.info(f"Built course context with {len(lessons_context)} lessons")
 
         # 4. Generate questions via LLM
-        quiz_output = self._mcq_generator.generate(context=context, query=prompt, skills=", ".join(skills))
+        quiz_output = self._mcq_generator.generate(context=context, query=prompt)
 
         # 5. Convert to dict format matching API schema
         questions_dict = quiz_output.model_dump()
@@ -317,7 +314,7 @@ class QuizService:
         logger.info(f"Generated {len(questions_data)} questions")
 
         # 6. Save questions to database
-        await self._quiz_repository.save_questions_to_quiz(
+        await self._quiz_repository.add_questions_to_quiz(
             lesson_id=quiz_id,
             questions_data=questions_data
         )

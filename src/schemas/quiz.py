@@ -44,17 +44,3 @@ class Question(BaseModel):
         description="Type of question"
     )
     answers: List[Answer] = Field(..., description="List of possible answers")
-
-
-class CreateQuizResponse(BaseModel):
-    """Response schema for quiz creation"""
-    success: bool = True
-    message: str = "Quiz generated successfully"
-    data: List[Question]
-
-
-class ErrorResponse(BaseModel):
-    """Schema for error responses"""
-    success: bool = False
-    message: str
-    detail: Optional[str] = None
