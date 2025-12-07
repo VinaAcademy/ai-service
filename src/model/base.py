@@ -6,9 +6,9 @@ Base = declarative_base()
 
 # --- Mixin ---
 class TimestampMixin:
-    """Mixin thêm các trường created_at và updated_at."""
-    created_at = Column(DateTime, default=func.now(), nullable=False)
-    updated_at = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
+    """Mixin thêm các trường created_date và updated_date."""
+    created_date = Column(DateTime, default=func.now(), nullable=False)
+    updated_date = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
 
 
 class SoftDeleteMixin:
@@ -17,7 +17,7 @@ class SoftDeleteMixin:
 
 
 # --- Class Base cho tất cả các Models ---
-class BaseMixin(TimestampMixin, SoftDeleteMixin):
+class BaseMixin(TimestampMixin):
     """Base class kết hợp ID, Timestamp và Soft Delete."""
 
     id = Column(Integer, primary_key=True, index=True)

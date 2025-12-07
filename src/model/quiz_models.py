@@ -1,9 +1,9 @@
 """
 Quiz-related models matching Java entities (Quiz, Question, Answer)
 """
+
 from sqlalchemy import (
-    Column, Text, Enum as SQLEnum,
-    Float, Integer, Boolean, ForeignKey
+    Column, Text, Float, Integer, Boolean, ForeignKey, String
 )
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import relationship
@@ -12,14 +12,14 @@ from src.model.base import Base, BaseMixin
 from src.model.enums import QuestionType
 
 
-class Quiz(Base, BaseMixin):
+class Quiz(Base):
     """
     Quiz model matching Java Quiz entity.
     
     Quiz extends Lesson in Java (using Single Table Inheritance with discriminator 'QUIZ').
     The Quiz ID is the same as the Lesson ID (shared primary key pattern).
     """
-    __tablename__ = 'quizzes'
+    __tablename__ = 'quiz'
 
     # Primary key is same as lesson.id (shared primary key)
     id = Column(
@@ -29,7 +29,7 @@ class Quiz(Base, BaseMixin):
     )
 
     # Quiz-specific fields
-    total_points = Column('totalPoint', Float, default=0.0)
+    total_points = Column('total_point', Float, default=0.0)
     duration = Column(Integer, default=0)
 
     # Quiz settings
@@ -73,7 +73,7 @@ class Question(Base, BaseMixin):
 
     quiz_id = Column(
         PGUUID(as_uuid=True),
-        ForeignKey('quizzes.id', ondelete='CASCADE'),
+        ForeignKey('quiz.id', ondelete='CASCADE'),
         nullable=False
     )
 
@@ -81,7 +81,7 @@ class Question(Base, BaseMixin):
     explanation = Column(Text, nullable=True)
     point = Column(Float, default=1.0)
     question_type = Column(
-        SQLEnum(QuestionType, name='question_type'),
+        String,
         default=QuestionType.SINGLE_CHOICE,
         nullable=False
     )

@@ -99,7 +99,7 @@ class Lesson(Base, BaseMixin):
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     lesson_type = Column(
-        SQLEnum(LessonType, name='lesson_type'),
+        String(31),
         default=LessonType.READING,
         nullable=False
     )

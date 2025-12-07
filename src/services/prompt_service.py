@@ -9,9 +9,14 @@ class PromptService:
     """
 
     @staticmethod
-    def build_quiz_creating_prompt(context: str, query: str, skills: str, instructions: str) -> str:
+    def build_quiz_creating_prompt(context: str, query: str, instructions: str) -> str:
         """Build the prompt for MCQ generation"""
         return f"""Bạn là Giảng viên có học vị Tiến sĩ, chuyên gia tạo các bộ câu hỏi để kiểm tra kiến thức của sinh viên.
+
+    YÊU CẦU BẮT BUỘC:
+    - TẤT CẢ nội dung sinh ra (câu hỏi, đáp án, giải thích, JSON) phải **100% bằng tiếng Việt**.
+    - Tuyệt đối **không dùng tiếng Anh** trong bất kỳ phần nào trừ khi văn bản gốc trong context có chứa tiếng Anh.
+
 
     YÊU CẦU TẠO CÂU HỎI:
     {query}
@@ -25,8 +30,6 @@ class PromptService:
     3. Mỗi câu hỏi PHẢI CÓ phần giải thích (explanation) cho đáp án đúng
     4. Điểm mặc định cho mỗi câu hỏi là 1.0
     5. QUAN TRỌNG: Mỗi câu hỏi PHẢI CÓ trường "answers" là một mảng các đáp án
-
-    KIẾN THỨC LIÊN QUAN: {skills}
 
     NỘI DUNG BÀI HỌC:
     {context}
@@ -77,7 +80,7 @@ class PromptService:
             "=== THÔNG TIN KHÓA HỌC ===",
             f"Tên khóa học: {first.get('course_name', 'N/A')}",
             f"Mô tả khóa học: {first.get('course_description', 'N/A')}",
-            f"Ngôn ngữ: {first.get('course_language', 'N/A')}",
+            f"Ngôn ngữ: {first.get('course_language', 'tiếng Việt')}",
             f"Cấp độ: {first.get('course_level', 'N/A')}",
             "",
             "=== THÔNG TIN SECTION ===",

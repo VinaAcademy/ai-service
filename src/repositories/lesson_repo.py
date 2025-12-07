@@ -20,29 +20,6 @@ class LessonRepository(BaseRepository[Lesson]):
     def __init__(self, session: AsyncSession):
         super().__init__(Lesson, session)
 
-    async def get_by_id(
-        self, 
-        id: UUID, 
-        include_deleted: bool = False
-    ) -> Optional[Lesson]:
-        """
-        Get a lesson by ID (UUID).
-        
-        Args:
-            id: UUID primary key
-            include_deleted: Whether to include soft-deleted records
-            
-        Returns:
-            Lesson instance or None if not found
-        """
-        query = select(self.model).where(self.model.id == id)
-        
-        if not include_deleted and hasattr(self.model, 'is_deleted'):
-            query = query.where(self.model.is_deleted.is_(False))
-        
-        result = await self.session.execute(query)
-        return result.scalar_one_or_none()
-
     async def get_lessons_by_section_id(
         self,
         section_id: UUID,
@@ -138,7 +115,7 @@ class LessonRepository(BaseRepository[Lesson]):
                 'section_title': row.section_title,
                 'lesson_id': row.lesson_id,
                 'lesson_title': row.lesson_title,
-                'lesson_type': row.lesson_type.value if row.lesson_type else None,
+                'lesson_type': row.lesson_type if row.lesson_type else None,
                 'lesson_description': row.lesson_description,
                 'lesson_order': row.lesson_order
             }

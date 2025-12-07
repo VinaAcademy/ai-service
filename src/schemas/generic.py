@@ -1,7 +1,37 @@
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, TypeVar, Generic
 
 from pydantic import BaseModel, Field
+
+T = TypeVar("T")
+
+
+class ApiResponse(BaseModel, Generic[T]):
+    """Generic API Response following the Java structure"""
+    status: str
+    message: Optional[str] = None
+    code: Optional[int] = None
+    data: Optional[T] = None
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    @classmethod
+    def success(cls, data: Optional[T] = None, message: Optional[str] = None):
+        return cls(
+            status="SUCCESS",
+            message=message,
+            data=data,
+            timestamp=datetime.now(timezone.utc)
+        )
+
+    @classmethod
+    def error(cls, code: int, message: str, data: Optional[T] = None):
+        return cls(
+            status="ERROR",
+            message=message,
+            code=code,
+            data=data,
+            timestamp=datetime.now(timezone.utc)
+        )
 
 
 class HealthResponse(BaseModel):
