@@ -113,3 +113,22 @@ class Lesson(Base, BaseMixin):
 
     def __repr__(self):
         return f"<Lesson(id={self.id}, title={self.title}, type={self.lesson_type})>"
+
+
+class CourseInstructor(Base, BaseMixin):
+    """
+    CourseInstructor model matching Java CourseInstructor entity
+    """
+    __tablename__ = 'course_instructor'
+
+    id = Column(PGUUID(as_uuid=True), primary_key=True)
+    course_id = Column(
+        PGUUID(as_uuid=True),
+        ForeignKey('courses.id', ondelete='CASCADE'),
+        nullable=False
+    )
+    user_id = Column(PGUUID(as_uuid=True), nullable=False)
+    is_owner = Column(Boolean, default=False)
+
+    def __repr__(self):
+        return f"<CourseInstructor(id={self.id}, course_id={self.course_id}, instructor_id={self.user_id})>"

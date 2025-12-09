@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from src.model.course_models import Course, Section, Lesson
+from src.model.course_models import Course, Section, Lesson, CourseInstructor
 from src.repositories.base_repo import BaseRepository
 
 
@@ -21,9 +21,9 @@ class LessonRepository(BaseRepository[Lesson]):
         super().__init__(Lesson, session)
 
     async def get_lessons_by_section_id(
-        self,
-        section_id: UUID,
-        include_deleted: bool = False
+            self,
+            section_id: UUID,
+            include_deleted: bool = False
     ) -> Sequence[Lesson]:
         """
         Get all lessons for a specific section.
@@ -40,17 +40,17 @@ class LessonRepository(BaseRepository[Lesson]):
             .where(Lesson.section_id == section_id)
             .order_by(Lesson.order_index)
         )
-        
+
         if not include_deleted and hasattr(Lesson, 'is_deleted'):
             query = query.where(Lesson.is_deleted.is_(False))
-        
+
         result = await self.session.execute(query)
         return result.scalars().all()
 
     async def get_lessons_with_course_context(
-        self,
-        section_id: UUID,
-        include_deleted: bool = False
+            self,
+            section_id: UUID,
+            include_deleted: bool = False
     ) -> Sequence[dict]:
         """
         Get lessons by section ID with full course context.
@@ -94,7 +94,7 @@ class LessonRepository(BaseRepository[Lesson]):
             .where(Section.id == section_id)
             .order_by(Lesson.order_index)
         )
-        
+
         if not include_deleted:
             if hasattr(Course, 'is_deleted'):
                 query = query.where(Course.is_deleted.is_(False))
@@ -102,10 +102,10 @@ class LessonRepository(BaseRepository[Lesson]):
                 query = query.where(Section.is_deleted.is_(False))
             if hasattr(Lesson, 'is_deleted'):
                 query = query.where((Lesson.is_deleted.is_(False)) | (Lesson.id.is_(None)))
-        
+
         result = await self.session.execute(query)
         rows = result.all()
-        
+
         return [
             {
                 'course_name': row.course_name,
@@ -123,9 +123,9 @@ class LessonRepository(BaseRepository[Lesson]):
         ]
 
     async def get_lesson_with_section(
-        self,
-        lesson_id: UUID,
-        include_deleted: bool = False
+            self,
+            lesson_id: UUID,
+            include_deleted: bool = False
     ) -> Optional[Lesson]:
         """
         Get a lesson with its section eagerly loaded.
@@ -142,9 +142,34 @@ class LessonRepository(BaseRepository[Lesson]):
             .options(joinedload(Lesson.section))
             .where(Lesson.id == lesson_id)
         )
-        
+
         if not include_deleted and hasattr(Lesson, 'is_deleted'):
             query = query.where(Lesson.is_deleted.is_(False))
-        
+
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
+
+    async def is_owner(self, lesson_id: UUID, user_id: UUID) -> bool:
+        """
+        Check if the user is the owner of the course that contains the lesson.
+
+        Args:
+            lesson_id: UUID of the lesson
+            user_id: UUID of the user
+        Returns:
+            True if the user owns the course, False otherwise
+        """
+        subquery = (
+            select(Section.course_id)
+            .join(Lesson, Lesson.section_id == Section.id)
+            .where(Lesson.id == lesson_id)
+            .scalar_subquery()
+        )
+        query = (
+            select(CourseInstructor)
+            .where(CourseInstructor.user_id == user_id)
+            .where(CourseInstructor.course_id == subquery)
+        )
+
+        result = await self.session.execute(query)
+        return result.scalar_one_or_none() is not None

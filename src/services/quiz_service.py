@@ -25,7 +25,9 @@ from src.retriever.bm25_retrieval import BM25Retriever
 from src.retriever.dense_retrieval import DenseRetriever
 from src.retriever.fusion import RRFFusion
 from src.schemas.external.quiz_llm import QuizOutputInternal
+from src.services.auth_service import AuthService
 from src.services.prompt_service import PromptService
+from src.utils.exceptions import AccessDeniedException
 
 logger = logging.getLogger(__name__)
 
@@ -260,12 +262,14 @@ class QuizService:
             retriever_factory: RetrieverFactory,
             mcq_generator: MCQGenerator,
             quiz_repository: QuizRepository,
-            lesson_repository: LessonRepository
+            lesson_repository: LessonRepository,
+            auth_service: AuthService
     ):
         self._retriever_factory = retriever_factory
         self._mcq_generator = mcq_generator
         self._quiz_repository = quiz_repository
         self._lesson_repository = lesson_repository
+        self._auth_service = auth_service
 
     async def generate_quiz(
             self,
@@ -293,6 +297,11 @@ class QuizService:
             raise ValueError(f"Quiz not found with ID: {quiz_id}")
 
         logger.info(f"Found quiz: {quiz.title}")
+
+        # 1.1 check user has permission to modify the quiz
+        current_user = self._auth_service.get_current_user()
+        if self._lesson_repository.is_owner(quiz.id, current_user) is False:
+            raise AccessDeniedException("User does not have permission to modify this quiz")
 
         # 2. Get course context using lesson repository
         section_id = quiz.section_id

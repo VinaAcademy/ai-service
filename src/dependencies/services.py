@@ -22,6 +22,7 @@ from src.config import get_settings
 from src.dependencies.db import get_database
 from src.repositories.lesson_repo import LessonRepository
 from src.repositories.quiz_repo import QuizRepository
+from src.services.auth_service import AuthService
 from src.services.quiz_service import (
     QuizService,
     RetrieverFactory,
@@ -101,3 +102,10 @@ async def get_quiz_service(
         quiz_repository=quiz_repository,
         lesson_repository=lesson_repository
     )
+
+
+async def get_auth_service() -> AuthService:
+    """
+    Get AuthService instance.
+    """
+    return AuthService()

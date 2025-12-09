@@ -21,7 +21,6 @@ class QuestionType(str, Enum):
 class CreateQuizRequest(BaseModel):
     """Request schema for creating a quiz"""
     prompt: str = Field(..., description="The prompt/query for generating quiz questions")
-    skills: List[str] = Field(..., description="List of skills to evaluate")
     quiz_id: UUID = Field(..., description="UUID of the quiz lesson to generate questions for")
 
 
