@@ -1,11 +1,13 @@
 """
 Enums matching Java entity enums
 """
+
 from enum import Enum
 
 
 class CourseLevel(str, Enum):
     """Course difficulty level"""
+
     BEGINNER = "BEGINNER"
     INTERMEDIATE = "INTERMEDIATE"
     ADVANCED = "ADVANCED"
@@ -13,6 +15,7 @@ class CourseLevel(str, Enum):
 
 class CourseStatus(str, Enum):
     """Course publication status"""
+
     DRAFT = "DRAFT"
     PENDING = "PENDING"
     PUBLISHED = "PUBLISHED"
@@ -25,13 +28,14 @@ class CourseStatus(str, Enum):
             "DRAFT": "bản nháp",
             "PENDING": "chờ duyệt",
             "PUBLISHED": "đã duyệt",
-            "REJECTED": "bị từ chối"
+            "REJECTED": "bị từ chối",
         }
         return translations.get(self.value, self.value)
 
 
 class LessonType(str, Enum):
     """Type of lesson content"""
+
     VIDEO = "VIDEO"
     READING = "READING"
     QUIZ = "QUIZ"
@@ -39,6 +43,7 @@ class LessonType(str, Enum):
 
 class QuestionType(str, Enum):
     """Type of quiz question"""
+
     SINGLE_CHOICE = "SINGLE_CHOICE"
     MULTIPLE_CHOICE = "MULTIPLE_CHOICE"
     TRUE_FALSE = "TRUE_FALSE"

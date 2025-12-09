@@ -10,7 +10,7 @@ from src.utils.exceptions import (
     BadRequestException,
     ResourceNotFoundException,
     AccessDeniedException,
-    UnauthorizedException
+    UnauthorizedException,
 )
 
 logger = logging.getLogger(__name__)
@@ -28,20 +28,20 @@ def register_exception_handlers(app: FastAPI):
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content=ApiResponse.error(
-                code=status.HTTP_400_BAD_REQUEST,
-                message=exc.message
-            ).model_dump(mode='json')
+                code=status.HTTP_400_BAD_REQUEST, message=exc.message
+            ).model_dump(mode="json"),
         )
 
     @app.exception_handler(ResourceNotFoundException)
-    async def resource_not_found_handler(request: Request, exc: ResourceNotFoundException):
+    async def resource_not_found_handler(
+            request: Request, exc: ResourceNotFoundException
+    ):
         logger.error(f"ResourceNotFoundException: {exc.message}", exc_info=True)
         return JSONResponse(
             status_code=status.HTTP_404_NOT_FOUND,
             content=ApiResponse.error(
-                code=status.HTTP_404_NOT_FOUND,
-                message=exc.message
-            ).model_dump(mode='json')
+                code=status.HTTP_404_NOT_FOUND, message=exc.message
+            ).model_dump(mode="json"),
         )
 
     @app.exception_handler(AccessDeniedException)
@@ -50,9 +50,8 @@ def register_exception_handlers(app: FastAPI):
         return JSONResponse(
             status_code=status.HTTP_403_FORBIDDEN,
             content=ApiResponse.error(
-                code=status.HTTP_403_FORBIDDEN,
-                message=exc.message
-            ).model_dump(mode='json')
+                code=status.HTTP_403_FORBIDDEN, message=exc.message
+            ).model_dump(mode="json"),
         )
 
     @app.exception_handler(UnauthorizedException)
@@ -61,18 +60,21 @@ def register_exception_handlers(app: FastAPI):
         return JSONResponse(
             status_code=status.HTTP_401_UNAUTHORIZED,
             content=ApiResponse.error(
-                code=status.HTTP_401_UNAUTHORIZED,
-                message=exc.message
-            ).model_dump(mode='json')
+                code=status.HTTP_401_UNAUTHORIZED, message=exc.message
+            ).model_dump(mode="json"),
         )
 
     @app.exception_handler(RequestValidationError)
-    async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    async def validation_exception_handler(
+            request: Request, exc: RequestValidationError
+    ):
         logger.error(f"Validation error: {exc.errors()}", exc_info=True)
         # Extract validation errors
         errors = []
         for error in exc.errors():
-            field = ".".join(str(x) for x in error["loc"]) if error["loc"] else "unknown"
+            field = (
+                ".".join(str(x) for x in error["loc"]) if error["loc"] else "unknown"
+            )
             msg = error["msg"]
             errors.append(f"{field}: {msg}")
 
@@ -80,9 +82,8 @@ def register_exception_handlers(app: FastAPI):
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content=ApiResponse.error(
-                code=status.HTTP_400_BAD_REQUEST,
-                message=f"Validation Error: {message}"
-            ).model_dump(mode='json')
+                code=status.HTTP_400_BAD_REQUEST, message=f"Validation Error: {message}"
+            ).model_dump(mode="json"),
         )
 
     @app.exception_handler(StarletteHTTPException)
@@ -91,9 +92,8 @@ def register_exception_handlers(app: FastAPI):
         return JSONResponse(
             status_code=exc.status_code,
             content=ApiResponse.error(
-                code=exc.status_code,
-                message=str(exc.detail)
-            ).model_dump(mode='json')
+                code=exc.status_code, message=str(exc.detail)
+            ).model_dump(mode="json"),
         )
 
     @app.exception_handler(Exception)
@@ -103,6 +103,6 @@ def register_exception_handlers(app: FastAPI):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             content=ApiResponse.error(
                 code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                message="Internal Server Error"
-            ).model_dump(mode='json')
+                message="Internal Server Error",
+            ).model_dump(mode="json"),
         )

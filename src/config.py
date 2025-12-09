@@ -18,7 +18,9 @@ class Settings(BaseSettings):
     instance_port: int = 8000
 
     # Database
-    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/vinaacademy"
+    database_url: str = (
+        "postgresql+asyncpg://postgres:postgres@localhost:5432/vinaacademy"
+    )
     sync_database_url: str = "postgresql://postgres:postgres@localhost:5432/vinaacademy"
 
     # LangChain / AI

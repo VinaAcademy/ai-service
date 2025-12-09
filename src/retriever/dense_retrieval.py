@@ -12,7 +12,7 @@ class DenseRetriever:
         embedding_model: str = "text-embedding-3-small",
         index_path: str = "./data/faiss.index",
         embed_path: str = "./data/embeddings.npy",
-        openai_api_key: str = None
+            openai_api_key: str = None,
     ):
         """
         passages: list of dict {"content": ...}
@@ -27,8 +27,7 @@ class DenseRetriever:
         self.index = None
         self.embeddings = None
         self.embedder = OpenAIEmbeddings(
-            model=self.embedding_model,
-            api_key=self.openai_api_key
+            model=self.embedding_model, api_key=self.openai_api_key
         )
 
     def build_index(self):
@@ -41,7 +40,7 @@ class DenseRetriever:
             print("⚡ Computing embeddings via OpenAI...")
             self.embeddings = np.array(
                 [self.embedder.embed_query(text) for text in self.texts],
-                dtype="float32"
+                dtype="float32",
             )
             np.save(self.embed_path, self.embeddings)
             d = self.embeddings.shape[1]

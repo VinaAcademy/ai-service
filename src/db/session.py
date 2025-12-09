@@ -7,8 +7,11 @@ from src.config import get_settings
 from src.db.base import Base
 
 settings = get_settings()
-engine = create_async_engine(settings.database_url, echo=True if settings.environment == "development" else False,
-                             poolclass=NullPool)
+engine = create_async_engine(
+    settings.database_url,
+    echo=True if settings.environment == "development" else False,
+    poolclass=NullPool,
+)
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,
     class_=AsyncSession,

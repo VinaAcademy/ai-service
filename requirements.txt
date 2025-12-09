@@ -28,6 +28,7 @@ python-multipart
 httpx
 python-docx
 pandas
+PyJWT
 
 # Testing
 pytest

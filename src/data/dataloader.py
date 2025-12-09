@@ -42,12 +42,14 @@ def load_document_to_dataframe(url: str) -> pd.DataFrame:
             nonlocal buffer, current_chapter, current_section, current_subsection
             text = "\n".join(buffer).strip()
             if text:
-                rows.append([
-                    current_chapter or "",
-                    current_section or "",
-                    current_subsection or "",
-                    text
-                ])
+                rows.append(
+                    [
+                        current_chapter or "",
+                        current_section or "",
+                        current_subsection or "",
+                        text,
+                    ]
+                )
             buffer.clear()
 
         for line in lines:

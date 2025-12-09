@@ -90,21 +90,23 @@ class PromptService:
         ]
 
         for lesson in lessons_context:
-            if lesson.get('lesson_id'):
+            if lesson.get("lesson_id"):
                 lesson_info = (
                     f"- {lesson.get('lesson_title', 'N/A')} "
                     f"(Loại: {lesson.get('lesson_type', 'N/A')})"
                 )
-                if lesson.get('lesson_description'):
+                if lesson.get("lesson_description"):
                     lesson_info += f"\n  Mô tả: {lesson.get('lesson_description')}"
                 context_parts.append(lesson_info)
 
-        context_parts.extend([
-            "",
-            "=== QUIZ HIỆN TẠI ===",
-            f"Tên quiz: {quiz.title}",
-            f"Mô tả quiz: {quiz.description or 'N/A'}",
-            "",
-        ])
+        context_parts.extend(
+            [
+                "",
+                "=== QUIZ HIỆN TẠI ===",
+                f"Tên quiz: {quiz.title}",
+                f"Mô tả quiz: {quiz.description or 'N/A'}",
+                "",
+            ]
+        )
 
         return "\n".join(context_parts)

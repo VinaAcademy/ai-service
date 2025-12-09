@@ -66,7 +66,7 @@ async def health_check():
         "status": "healthy",
         "service": settings.app_name,
         "version": settings.app_version,
-        "environment": settings.environment
+        "environment": settings.environment,
     }
 
 
@@ -75,7 +75,7 @@ async def root():
     return {
         "message": f"Welcome to {settings.app_name}",
         "version": settings.app_version,
-        "docs": "/docs"
+        "docs": "/docs",
     }
 
 
@@ -93,14 +93,16 @@ llm = ChatGoogleGenerativeAI(
     timeout=None,
     max_retries=2,
     streaming=True,
-    google_api_key=settings.google_api_key
+    google_api_key=settings.google_api_key,
 )
 
 
 def event_stream(prompt: str):
     messages = [
-        SystemMessage(content="You are a helpful assistant that instructs newbie to cooking."),
-        HumanMessage(content=prompt)
+        SystemMessage(
+            content="You are a helpful assistant that instructs newbie to cooking."
+        ),
+        HumanMessage(content=prompt),
     ]
     for chunk in llm.stream(messages):
         yield f"data: {chunk.content}\n\n"
