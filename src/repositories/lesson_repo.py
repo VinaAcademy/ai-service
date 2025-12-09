@@ -146,7 +146,7 @@ class LessonRepository(BaseRepository[Lesson]):
         result = await self.session.execute(query)
         return result.scalar_one_or_none()
 
-    async def is_owner(self, lesson_id: UUID, user_id: UUID) -> bool:
+    async def is_instructor(self, lesson_id: UUID, user_id: UUID) -> bool:
         """
         Check if the user is the owner of the course that contains the lesson.
 

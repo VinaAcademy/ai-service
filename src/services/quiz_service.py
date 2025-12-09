@@ -28,7 +28,7 @@ from src.retriever.dense_retrieval import DenseRetriever
 from src.retriever.fusion import RRFFusion
 from src.schemas.external.quiz_llm import QuizOutputInternal
 from src.services.prompt_service import PromptService
-from src.utils.exceptions import AccessDeniedException
+from src.utils.exceptions import AccessDeniedException, UnauthorizedException
 
 logger = logging.getLogger(__name__)
 
@@ -298,7 +298,12 @@ class QuizService:
         logger.info(f"Found quiz: {quiz.title}")
 
         # 1.1 check user has permission to modify the quiz
-        is_owner = await self._lesson_repository.is_owner(quiz.id, uuid.UUID(user_id))
+        try:
+            user_uuid = uuid.UUID(user_id)
+        except ValueError:
+            raise UnauthorizedException("Invalid user ID format")
+
+        is_owner = await self._lesson_repository.is_instructor(quiz.id, user_uuid)
         if not is_owner:
             raise AccessDeniedException(
                 "User does not have permission to modify this quiz"
