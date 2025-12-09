@@ -8,9 +8,11 @@ Architecture:
     - MCQGenerator: LLM-based question generation with Pydantic parsing
     - QuizService: Orchestrates the pipeline (injectable via FastAPI Depends)
 """
+
 import json
 import logging
 import re
+import uuid
 from typing import List
 from uuid import UUID
 
@@ -25,7 +27,6 @@ from src.retriever.bm25_retrieval import BM25Retriever
 from src.retriever.dense_retrieval import DenseRetriever
 from src.retriever.fusion import RRFFusion
 from src.schemas.external.quiz_llm import QuizOutputInternal
-from src.services.auth_service import AuthService
 from src.services.prompt_service import PromptService
 from src.utils.exceptions import AccessDeniedException
 
@@ -44,10 +45,10 @@ class RetrieverFactory:
     def create(self, passages: List[dict]) -> "HybridRetriever":
         """
         Create a hybrid retriever for the given passages.
-        
+
         Args:
             passages: List of passage dicts with "id" and "content" keys
-            
+
         Returns:
             HybridRetriever instance configured with BM25 + Dense + RRF
         """
@@ -55,7 +56,7 @@ class RetrieverFactory:
             passages=passages,
             openai_api_key=self._settings.openai_api_key,
             rrf_k=self._settings.rrf_k,
-            candidates_n=self._settings.candidates_n
+            candidates_n=self._settings.candidates_n,
         )
 
 
@@ -67,7 +68,7 @@ class HybridRetriever:
             passages: List[dict],
             openai_api_key: str,
             rrf_k: int = 60,
-            candidates_n: int = 20
+            candidates_n: int = 20,
     ):
         self._passages = passages
         self._candidates_n = candidates_n
@@ -78,11 +79,11 @@ class HybridRetriever:
     def retrieve(self, query: str, top_k: int = None) -> List[str]:
         """
         Retrieve relevant passages using hybrid search.
-        
+
         Args:
             query: Search query
             top_k: Number of results to return (defaults to candidates_n)
-            
+
         Returns:
             List of passage texts
         """
@@ -104,32 +105,33 @@ class MCQGenerator:
     def __init__(self, settings: Settings):
         self._settings = settings
         # Use higher max_tokens for quiz generation, disable streaming for structured output
-        self._llm = LLMFactory.create(
-            max_tokens=self.QUIZ_MAX_TOKENS,
-            streaming=False
-        )
+        self._llm = LLMFactory.create(max_tokens=self.QUIZ_MAX_TOKENS, streaming=False)
         self._parser = PydanticOutputParser(pydantic_object=QuizOutputInternal)
         self._format_instructions = self._parser.get_format_instructions()
 
     def generate(self, context: str, query: str) -> QuizOutputInternal:
         """
         Generate quiz questions from context.
-        
+
         Args:
             context: Document content to generate questions from
             query: User's prompt specifying what questions to generate
-            
+
         Returns:
             QuizOutputInternal with parsed questions
         """
-        prompt = PromptService.build_quiz_creating_prompt(context, query, self._format_instructions)
+        prompt = PromptService.build_quiz_creating_prompt(
+            context, query, self._format_instructions
+        )
 
         logger.info("Generating quiz questions via LLM...")
         raw_output = self._llm.invoke(prompt)
         logger.debug("LLM response received, parsing output...")
 
         # Extract content if output is an AIMessage (ChatModel)
-        content = raw_output.content if hasattr(raw_output, "content") else str(raw_output)
+        content = (
+            raw_output.content if hasattr(raw_output, "content") else str(raw_output)
+        )
 
         logger.debug(f"Raw LLM output: {content[:500]}...")
 
@@ -139,13 +141,13 @@ class MCQGenerator:
     def _parse_with_fallback(self, content: str) -> QuizOutputInternal:
         """
         Parse LLM output with fallback strategies.
-        
+
         Args:
             content: Raw LLM output string
-            
+
         Returns:
             QuizOutputInternal with parsed questions
-            
+
         Raises:
             ValueError: If parsing fails after all attempts
         """
@@ -164,7 +166,7 @@ class MCQGenerator:
 
         # Strategy 2: Extract JSON from markdown code block
         try:
-            json_match = re.search(r'```(?:json)?\s*([\s\S]*?)\s*```', content)
+            json_match = re.search(r"```(?:json)?\s*([\s\S]*?)\s*```", content)
             if json_match:
                 json_str = json_match.group(1)
                 return self._parser.parse(json_str)
@@ -173,7 +175,7 @@ class MCQGenerator:
 
         # Strategy 3: Find JSON object directly
         try:
-            json_match = re.search(r'\{[\s\S]*}', content)
+            json_match = re.search(r"\{[\s\S]*}", content)
             if json_match:
                 json_str = json_match.group(0)
                 data = json.loads(json_str)
@@ -185,9 +187,9 @@ class MCQGenerator:
         try:
             # Remove any leading/trailing non-JSON content
             cleaned = content.strip()
-            if cleaned.startswith('```'):
-                cleaned = re.sub(r'^```\w*\n?', '', cleaned)
-                cleaned = re.sub(r'\n?```$', '', cleaned)
+            if cleaned.startswith("```"):
+                cleaned = re.sub(r"^```\w*\n?", "", cleaned)
+                cleaned = re.sub(r"\n?```$", "", cleaned)
 
             data = json.loads(cleaned)
             return QuizOutputInternal.model_validate(data)
@@ -210,10 +212,10 @@ class MCQGenerator:
         content = content.strip()
 
         # Check if JSON is properly closed
-        open_braces = content.count('{')
-        close_braces = content.count('}')
-        open_brackets = content.count('[')
-        close_brackets = content.count(']')
+        open_braces = content.count("{")
+        close_braces = content.count("}")
+        open_brackets = content.count("[")
+        close_brackets = content.count("]")
 
         if open_braces != close_braces or open_brackets != close_brackets:
             logger.warning(
@@ -226,8 +228,8 @@ class MCQGenerator:
             r'"answer_text":\s*"[^"]*$',  # Truncated in middle of answer_text
             r'"question_text":\s*"[^"]*$',  # Truncated in middle of question_text
             r'"explanation":\s*"[^"]*$',  # Truncated in middle of explanation
-            r',\s*$',  # Ends with comma
-            r':\s*$',  # Ends with colon
+            r",\s*$",  # Ends with comma
+            r":\s*$",  # Ends with colon
         ]
 
         for pattern in truncation_patterns:
@@ -244,10 +246,10 @@ class MCQGenerator:
 class QuizService:
     """
     Service for quiz generation operations.
-    
+
     Orchestrates quiz retrieval, course context loading, and question generation pipeline.
     Inject via FastAPI Depends() for proper dependency management.
-    
+
     Example:
         @router.post("/create")
         async def create_quiz(
@@ -263,33 +265,30 @@ class QuizService:
             mcq_generator: MCQGenerator,
             quiz_repository: QuizRepository,
             lesson_repository: LessonRepository,
-            auth_service: AuthService
     ):
         self._retriever_factory = retriever_factory
         self._mcq_generator = mcq_generator
         self._quiz_repository = quiz_repository
         self._lesson_repository = lesson_repository
-        self._auth_service = auth_service
 
-    async def generate_quiz(
-            self,
-            prompt: str,
-            quiz_id: UUID
-    ) -> List[dict]:
+    async def generate_quiz(self, prompt: str, quiz_id: UUID, user_id: str) -> List[dict]:
         """
         Generate quiz questions based on course context and save them to the database.
-        
+
         Args:
             prompt: The prompt/query for generating quiz questions
             quiz_id: UUID of the quiz lesson
-            
+            user_id: ID of the user requesting quiz generation
+
         Returns:
             List of Question dicts matching the API schema
-            
+
         Raises:
             ValueError: If quiz not found or has no section
         """
-        logger.info(f"Starting quiz generation for quiz_id: {quiz_id}, prompt: {prompt[:50]}...")
+        logger.info(
+            f"Starting quiz generation for quiz_id: {quiz_id}, prompt: {prompt[:50]}..."
+        )
 
         # 1. Get the quiz by ID
         quiz = await self._quiz_repository.get_quiz_by_id(quiz_id)
@@ -299,16 +298,20 @@ class QuizService:
         logger.info(f"Found quiz: {quiz.title}")
 
         # 1.1 check user has permission to modify the quiz
-        current_user = self._auth_service.get_current_user()
-        if self._lesson_repository.is_owner(quiz.id, current_user) is False:
-            raise AccessDeniedException("User does not have permission to modify this quiz")
+        is_owner = await self._lesson_repository.is_owner(quiz.id, uuid.UUID(user_id))
+        if not is_owner:
+            raise AccessDeniedException(
+                "User does not have permission to modify this quiz"
+            )
 
         # 2. Get course context using lesson repository
         section_id = quiz.section_id
         if not section_id:
             raise ValueError(f"Quiz {quiz_id} has no associated section")
 
-        lessons_context = await self._lesson_repository.get_lessons_with_course_context(section_id)
+        lessons_context = await self._lesson_repository.get_lessons_with_course_context(
+            section_id
+        )
 
         # 3. Build context string from course information
         context = PromptService.build_course_context(list(lessons_context), quiz)
@@ -324,8 +327,7 @@ class QuizService:
 
         # 6. Save questions to database
         await self._quiz_repository.add_questions_to_quiz(
-            lesson_id=quiz_id,
-            questions_data=questions_data
+            lesson_id=quiz_id, questions_data=questions_data
         )
         await self._quiz_repository.commit()
         logger.info(f"Saved {len(questions_data)} questions to quiz {quiz_id}")

@@ -2,9 +2,7 @@
 Quiz-related models matching Java entities (Quiz, Question, Answer)
 """
 
-from sqlalchemy import (
-    Column, Text, Float, Integer, Boolean, ForeignKey, String
-)
+from sqlalchemy import Column, Text, Float, Integer, Boolean, ForeignKey, String
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import relationship
 
@@ -15,21 +13,22 @@ from src.model.enums import QuestionType
 class Quiz(Base):
     """
     Quiz model matching Java Quiz entity.
-    
+
     Quiz extends Lesson in Java (using Single Table Inheritance with discriminator 'QUIZ').
     The Quiz ID is the same as the Lesson ID (shared primary key pattern).
     """
-    __tablename__ = 'quiz'
+
+    __tablename__ = "quiz"
 
     # Primary key is same as lesson.id (shared primary key)
     id = Column(
         PGUUID(as_uuid=True),
-        ForeignKey('lessons.id', ondelete='CASCADE'),
-        primary_key=True
+        ForeignKey("lessons.id", ondelete="CASCADE"),
+        primary_key=True,
     )
 
     # Quiz-specific fields
-    total_points = Column('total_point', Float, default=0.0)
+    total_points = Column("total_point", Float, default=0.0)
     duration = Column(Integer, default=0)
 
     # Quiz settings
@@ -43,10 +42,7 @@ class Quiz(Base):
     # Relationships
     lesson = relationship("Lesson", backref="quiz_details", uselist=False)
     questions = relationship(
-        "Question",
-        back_populates="quiz",
-        cascade="all, delete-orphan",
-        lazy="selectin"
+        "Question", back_populates="quiz", cascade="all, delete-orphan", lazy="selectin"
     )
 
     def add_question(self, question: "Question"):
@@ -67,24 +63,19 @@ class Question(Base, BaseMixin):
     """
     Question model matching Java Question entity.
     """
-    __tablename__ = 'questions'
+
+    __tablename__ = "questions"
 
     id = Column(PGUUID(as_uuid=True), primary_key=True)
 
     quiz_id = Column(
-        PGUUID(as_uuid=True),
-        ForeignKey('quiz.id', ondelete='CASCADE'),
-        nullable=False
+        PGUUID(as_uuid=True), ForeignKey("quiz.id", ondelete="CASCADE"), nullable=False
     )
 
     question_text = Column(Text, nullable=False)
     explanation = Column(Text, nullable=True)
     point = Column(Float, default=1.0)
-    question_type = Column(
-        String,
-        default=QuestionType.SINGLE_CHOICE,
-        nullable=False
-    )
+    question_type = Column(String, default=QuestionType.SINGLE_CHOICE, nullable=False)
 
     # Relationships
     quiz = relationship("Quiz", back_populates="questions")
@@ -92,7 +83,7 @@ class Question(Base, BaseMixin):
         "Answer",
         back_populates="question",
         cascade="all, delete-orphan",
-        lazy="selectin"
+        lazy="selectin",
     )
 
     def add_answer(self, answer: "Answer"):
@@ -113,14 +104,15 @@ class Answer(Base, BaseMixin):
     """
     Answer model matching Java Answer entity.
     """
-    __tablename__ = 'answers'
+
+    __tablename__ = "answers"
 
     id = Column(PGUUID(as_uuid=True), primary_key=True)
 
     question_id = Column(
         PGUUID(as_uuid=True),
-        ForeignKey('questions.id', ondelete='CASCADE'),
-        nullable=False
+        ForeignKey("questions.id", ondelete="CASCADE"),
+        nullable=False,
     )
 
     answer_text = Column(Text, nullable=False)

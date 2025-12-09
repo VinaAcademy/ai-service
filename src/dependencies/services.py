@@ -4,7 +4,7 @@ Dependency injection functions for services.
 Usage in endpoints:
     from fastapi import Depends
     from src.dependencies.services import get_quiz_service
-    
+
     @router.post("/create")
     async def create_quiz(
         request: CreateQuizRequest,
@@ -12,6 +12,7 @@ Usage in endpoints:
     ):
         return await quiz_service.generate_quiz(...)
 """
+
 import logging
 from functools import lru_cache
 
@@ -22,12 +23,7 @@ from src.config import get_settings
 from src.dependencies.db import get_database
 from src.repositories.lesson_repo import LessonRepository
 from src.repositories.quiz_repo import QuizRepository
-from src.services.auth_service import AuthService
-from src.services.quiz_service import (
-    QuizService,
-    RetrieverFactory,
-    MCQGenerator
-)
+from src.services.quiz_service import QuizService, RetrieverFactory, MCQGenerator
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +55,7 @@ def get_mcq_generator() -> MCQGenerator:
 #   Repository Dependencies
 # =============================
 async def get_quiz_repository(
-    session: AsyncSession = Depends(get_database)
+        session: AsyncSession = Depends(get_database),
 ) -> QuizRepository:
     """
     Get QuizRepository instance with injected database session.
@@ -68,7 +64,7 @@ async def get_quiz_repository(
 
 
 async def get_lesson_repository(
-    session: AsyncSession = Depends(get_database)
+        session: AsyncSession = Depends(get_database),
 ) -> LessonRepository:
     """
     Get LessonRepository instance with injected database session.
@@ -80,16 +76,16 @@ async def get_lesson_repository(
 #   Quiz Service (Per-Request)
 # =============================
 async def get_quiz_service(
-    quiz_repository: QuizRepository = Depends(get_quiz_repository),
-    lesson_repository: LessonRepository = Depends(get_lesson_repository)
+        quiz_repository: QuizRepository = Depends(get_quiz_repository),
+        lesson_repository: LessonRepository = Depends(get_lesson_repository),
 ) -> QuizService:
     """
     Get QuizService instance with all dependencies injected.
-    
+
     Note: This is NOT a singleton because it requires database session
     which is per-request. The retriever_factory and mcq_generator are
     still singletons (cached via @lru_cache).
-    
+
     Dependencies:
         - RetrieverFactory: Creates hybrid retrievers per document
         - MCQGenerator: Generates questions via LLM
@@ -102,10 +98,3 @@ async def get_quiz_service(
         quiz_repository=quiz_repository,
         lesson_repository=lesson_repository
     )
-
-
-async def get_auth_service() -> AuthService:
-    """
-    Get AuthService instance.
-    """
-    return AuthService()

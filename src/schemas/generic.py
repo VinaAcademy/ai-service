@@ -8,6 +8,7 @@ T = TypeVar("T")
 
 class ApiResponse(BaseModel, Generic[T]):
     """Generic API Response following the Java structure"""
+
     status: str
     message: Optional[str] = None
     code: Optional[int] = None
@@ -20,7 +21,7 @@ class ApiResponse(BaseModel, Generic[T]):
             status="SUCCESS",
             message=message,
             data=data,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(timezone.utc),
         )
 
     @classmethod
@@ -30,12 +31,13 @@ class ApiResponse(BaseModel, Generic[T]):
             message=message,
             code=code,
             data=data,
-            timestamp=datetime.now(timezone.utc)
+            timestamp=datetime.now(timezone.utc),
         )
 
 
 class HealthResponse(BaseModel):
     """Health check response"""
+
     status: str
     service: str
     version: str
@@ -44,6 +46,7 @@ class HealthResponse(BaseModel):
 
 class ErrorResponse(BaseModel):
     """Error response"""
+
     error: str
     detail: Optional[str] = None
     timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -53,12 +56,13 @@ class ErrorResponse(BaseModel):
             "example": {
                 "error": "Bad Request",
                 "detail": "Invalid session_id format",
-                "timestamp": "2024-11-07T10:30:00Z"
+                "timestamp": "2024-11-07T10:30:00Z",
             }
         }
 
 
 class SuccessResponse(BaseModel):
     """Generic success response"""
+
     message: str
     data: Optional[dict] = None

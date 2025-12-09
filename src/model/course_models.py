@@ -1,11 +1,20 @@
 """
 Course-related models matching Java entities
 """
+
 from decimal import Decimal
 
 from sqlalchemy import (
-    Column, String, Text, Numeric, Enum as SQLEnum,
-    Float, BigInteger, Integer, Boolean, ForeignKey
+    Column,
+    String,
+    Text,
+    Numeric,
+    Enum as SQLEnum,
+    Float,
+    BigInteger,
+    Integer,
+    Boolean,
+    ForeignKey,
 )
 from sqlalchemy.dialects.postgresql import UUID as PGUUID
 from sqlalchemy.orm import relationship
@@ -18,25 +27,26 @@ class Course(Base, BaseMixin):
     """
     Course model matching Java Course entity
     """
-    __tablename__ = 'courses'
+
+    __tablename__ = "courses"
 
     id = Column(PGUUID(as_uuid=True), primary_key=True)
     image = Column(String(255), nullable=True)
     name = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     slug = Column(String(255), unique=True, nullable=False, index=True)
-    price = Column(Numeric(precision=10, scale=2), default=Decimal('0.00'))
+    price = Column(Numeric(precision=10, scale=2), default=Decimal("0.00"))
     level = Column(
-        SQLEnum(CourseLevel, name='course_level'),
+        SQLEnum(CourseLevel, name="course_level"),
         default=CourseLevel.BEGINNER,
-        nullable=False
+        nullable=False,
     )
     status = Column(
-        SQLEnum(CourseStatus, name='course_status'),
+        SQLEnum(CourseStatus, name="course_status"),
         default=CourseStatus.DRAFT,
-        nullable=False
+        nullable=False,
     )
-    language = Column(String(50), default='Tiếng Việt')
+    language = Column(String(50), default="Tiếng Việt")
     category_id = Column(PGUUID(as_uuid=True), nullable=True)
     rating = Column(Float, default=0.0)
     total_rating = Column(BigInteger, default=0)
@@ -49,7 +59,7 @@ class Course(Base, BaseMixin):
         "Section",
         back_populates="course",
         cascade="all, delete-orphan",
-        order_by="Section.order_index"
+        order_by="Section.order_index",
     )
 
     def __repr__(self):
@@ -60,13 +70,14 @@ class Section(Base, BaseMixin):
     """
     Section model matching Java Section entity
     """
-    __tablename__ = 'sections'
+
+    __tablename__ = "sections"
 
     id = Column(PGUUID(as_uuid=True), primary_key=True)
     course_id = Column(
         PGUUID(as_uuid=True),
-        ForeignKey('courses.id', ondelete='CASCADE'),
-        nullable=False
+        ForeignKey("courses.id", ondelete="CASCADE"),
+        nullable=False,
     )
     title = Column(String(255), nullable=False)
     order_index = Column(Integer, default=0)
@@ -77,7 +88,7 @@ class Section(Base, BaseMixin):
         "Lesson",
         back_populates="section",
         cascade="all, delete-orphan",
-        order_by="Lesson.order_index"
+        order_by="Lesson.order_index",
     )
 
     def __repr__(self):
@@ -88,21 +99,18 @@ class Lesson(Base, BaseMixin):
     """
     Lesson model matching Java Lesson entity (abstract base)
     """
-    __tablename__ = 'lessons'
+
+    __tablename__ = "lessons"
 
     id = Column(PGUUID(as_uuid=True), primary_key=True)
     section_id = Column(
         PGUUID(as_uuid=True),
-        ForeignKey('sections.id', ondelete='CASCADE'),
-        nullable=False
+        ForeignKey("sections.id", ondelete="CASCADE"),
+        nullable=False,
     )
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
-    lesson_type = Column(
-        String(31),
-        default=LessonType.READING,
-        nullable=False
-    )
+    lesson_type = Column(String(31), default=LessonType.READING, nullable=False)
     is_free = Column(Boolean, default=False)
     order_index = Column(Integer, default=0)
     author_id = Column(PGUUID(as_uuid=True), nullable=False)
@@ -119,13 +127,14 @@ class CourseInstructor(Base, BaseMixin):
     """
     CourseInstructor model matching Java CourseInstructor entity
     """
-    __tablename__ = 'course_instructor'
+
+    __tablename__ = "course_instructor"
 
     id = Column(PGUUID(as_uuid=True), primary_key=True)
     course_id = Column(
         PGUUID(as_uuid=True),
-        ForeignKey('courses.id', ondelete='CASCADE'),
-        nullable=False
+        ForeignKey("courses.id", ondelete="CASCADE"),
+        nullable=False,
     )
     user_id = Column(PGUUID(as_uuid=True), nullable=False)
     is_owner = Column(Boolean, default=False)

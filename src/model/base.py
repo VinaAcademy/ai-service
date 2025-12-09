@@ -7,12 +7,16 @@ Base = declarative_base()
 # --- Mixin ---
 class TimestampMixin:
     """Mixin thêm các trường created_date và updated_date."""
+
     created_date = Column(DateTime, default=func.now(), nullable=False)
-    updated_date = Column(DateTime, default=func.now(), onupdate=func.now(), nullable=False)
+    updated_date = Column(
+        DateTime, default=func.now(), onupdate=func.now(), nullable=False
+    )
 
 
 class SoftDeleteMixin:
     """Mixin thêm trường is_deleted cho tính năng soft delete."""
+
     is_deleted = Column(Boolean, default=False, nullable=False)
 
 
@@ -26,7 +30,7 @@ class BaseMixin(TimestampMixin):
     @declared_attr
     def __tablename__(cls):
         # Chuyển tên lớp từ CamelCase sang snake_case và thêm 's'
-        return cls.__name__.lower() + 's'
+        return cls.__name__.lower() + "s"
 
     def __repr__(self):
         return f"<{self.__class__.__name__}(id={self.id})>"
