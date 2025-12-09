@@ -303,8 +303,8 @@ class QuizService:
         except ValueError:
             raise UnauthorizedException("Invalid user ID format")
 
-        is_owner = await self._lesson_repository.is_instructor(quiz.id, user_uuid)
-        if not is_owner:
+        is_instructor = await self._lesson_repository.is_instructor(quiz.id, user_uuid)
+        if not is_instructor:
             raise AccessDeniedException(
                 "User does not have permission to modify this quiz"
             )
