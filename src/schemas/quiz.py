@@ -52,3 +52,36 @@ class Question(BaseModel):
         default=QuestionType.SINGLE_CHOICE, description="Type of question"
     )
     answers: List[Answer] = Field(..., description="List of possible answers")
+
+
+# =============================
+#   Progress Tracking Schemas
+# =============================
+class QuizGenerationStatus(str, Enum):
+    """Enum for quiz generation status"""
+
+    PENDING = "PENDING"
+    PROCESSING = "PROCESSING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+
+class QuizProgressResponse(BaseModel):
+    """Response schema for quiz generation progress"""
+
+    status: QuizGenerationStatus = Field(..., description="Current generation status")
+    progress: int = Field(..., description="Progress percentage (0-100)", ge=0, le=100)
+    message: str = Field(..., description="Human-readable status message")
+    total_questions: int = Field(
+        default=0, description="Number of questions generated", ge=0
+    )
+    error: Optional[str] = Field(None, description="Error message if failed")
+
+
+class CreateQuizAsyncResponse(BaseModel):
+    """Response schema for async quiz creation"""
+
+    quiz_id: UUID = Field(..., description="UUID of the quiz being generated")
+    message: str = Field(
+        ..., description="Information message about the async operation"
+    )

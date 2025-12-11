@@ -12,6 +12,7 @@ from src.api.v1.router import api_router
 from src.clients.eureka_client import register_with_eureka, deregister_from_eureka
 from src.config import get_settings
 from src.db.session import init_db, close_db
+from src.dependencies.services import get_redis_client
 from src.utils.exception_handlers import register_exception_handlers
 from src.utils.log import setup_logging
 
@@ -28,12 +29,29 @@ async def lifespan(fastapi_app: FastAPI) -> AsyncGenerator:
     await init_db()
     await register_with_eureka()
 
+    # Initialize Redis connection
+    try:
+        redis_client = await get_redis_client()
+        logger.info("Redis client initialized")
+        if not await redis_client.ping():
+            logger.warning("Redis client ping failed")
+    except Exception as e:
+        logger.warning(f"Failed to initialize Redis client: {e}")
+
     yield
 
     # SHUTDOWN
     logger.info(f"🛑 Shutting down {settings.app_name}")
     await deregister_from_eureka()
     await close_db()
+
+    # Close Redis connection
+    try:
+        redis_client = await get_redis_client()
+        await redis_client.disconnect()
+        logger.info("Redis client disconnected")
+    except Exception as e:
+        logger.warning(f"Failed to disconnect Redis client: {e}")
 
 
 # Create app

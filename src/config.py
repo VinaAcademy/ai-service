@@ -45,7 +45,7 @@ class Settings(BaseSettings):
     candidates_n: int = 20
 
     # Redis
-    redis_url: Optional[str] = None
+    redis_url: Optional[str] = "redis://localhost:6379/0"
 
     # Kafka
     kafka_bootstrap_servers: Optional[str] = None

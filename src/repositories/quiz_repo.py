@@ -210,8 +210,6 @@ class QuizRepository(BaseRepository[Lesson]):
         # Get or create quiz details
         quiz = await self.create_or_get_quiz_details(lesson_id)
 
-        total_points = 0.0
-
         # Create Question and Answer entities
         for q_data in questions_data:
             question = Question(
@@ -222,8 +220,6 @@ class QuizRepository(BaseRepository[Lesson]):
                 point=q_data.get("point", 1.0),
                 question_type=QuestionType(q_data["question_type"]),
             )
-
-            total_points += question.point
 
             # Create answers for this question
             for ans_data in q_data.get("answers", []):
@@ -238,6 +234,7 @@ class QuizRepository(BaseRepository[Lesson]):
             quiz.questions.append(question)
 
         # Update total points
+        total_points = sum(q.point for q in quiz.questions)
         quiz.total_points = total_points
 
         await self.session.flush()

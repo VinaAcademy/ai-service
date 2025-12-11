@@ -18,6 +18,7 @@ sqlalchemy[asyncio]
 asyncpg
 alembic
 pgvector
+redis
 
 # Eureka Client
 py-eureka-client
