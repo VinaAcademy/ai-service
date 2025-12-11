@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from src.model import Lesson
 
@@ -9,8 +9,30 @@ class PromptService:
     """
 
     @staticmethod
-    def build_quiz_creating_prompt(context: str, query: str, instructions: str) -> str:
-        """Build the prompt for MCQ generation"""
+    def build_quiz_creating_prompt(
+            context: str,
+            query: str,
+            instructions: str,
+            existing_questions: Optional[List[dict]] = None,
+    ) -> str:
+        """
+        Build the prompt for MCQ generation.
+
+        Args:
+            context: Course/lesson context string
+            query: User's prompt specifying what questions to generate
+            instructions: Pydantic format instructions for output parsing
+            existing_questions: Optional list of existing questions in the quiz
+                               to avoid generating duplicates
+
+        Returns:
+            Formatted prompt string for LLM
+        """
+        # Build existing questions context if provided
+        existing_questions_context = PromptService._build_existing_questions_context(
+            existing_questions
+        )
+
         return f"""Bạn là Giảng viên có học vị Tiến sĩ, chuyên gia tạo các bộ câu hỏi để kiểm tra kiến thức của sinh viên.
 
     YÊU CẦU BẮT BUỘC:
@@ -30,7 +52,8 @@ class PromptService:
     3. Mỗi câu hỏi PHẢI CÓ phần giải thích (explanation) cho đáp án đúng
     4. Điểm mặc định cho mỗi câu hỏi là 1.0
     5. QUAN TRỌNG: Mỗi câu hỏi PHẢI CÓ trường "answers" là một mảng các đáp án
-
+    {existing_questions_context}
+    
     NỘI DUNG BÀI HỌC:
     {context}
 
@@ -89,15 +112,15 @@ class PromptService:
             "=== DANH SÁCH BÀI HỌC TRONG SECTION ===",
         ]
 
-        for lesson in lessons_context:
-            if lesson.get("lesson_id"):
-                lesson_info = (
-                    f"- {lesson.get('lesson_title', 'N/A')} "
-                    f"(Loại: {lesson.get('lesson_type', 'N/A')})"
-                )
-                if lesson.get("lesson_description"):
-                    lesson_info += f"\n  Mô tả: {lesson.get('lesson_description')}"
-                context_parts.append(lesson_info)
+        # for lesson in lessons_context:
+        #     if lesson.get("lesson_id"):
+        #         lesson_info = (
+        #             f"- {lesson.get('lesson_title', 'N/A')} "
+        #             f"(Loại: {lesson.get('lesson_type', 'N/A')})"
+        #         )
+        #         if lesson.get("lesson_description"):
+        #             lesson_info += f"\n  Mô tả: {lesson.get('lesson_description')}"
+        #         context_parts.append(lesson_info)
 
         context_parts.extend(
             [
@@ -110,3 +133,26 @@ class PromptService:
         )
 
         return "\n".join(context_parts)
+
+    @staticmethod
+    def _build_existing_questions_context(
+            existing_questions: Optional[List[dict]],
+    ) -> str:
+        """
+        Build context string for existing questions to avoid duplicates.
+
+        Args:
+            existing_questions: List of existing question dicts
+        Returns:
+            Formatted string listing existing questions
+        """
+        if not existing_questions:
+            return ""
+
+        questions_list = "\n".join(
+            [f"- {q['question_text']} - {q['question_type']}" for q in existing_questions]
+        )
+
+        return f"""6. KHÔNG được tạo câu hỏi trùng lặp hoặc quá giống với các câu hỏi đã có trong quiz
+                Các câu hỏi hiện có trong quiz là:
+                {questions_list}"""

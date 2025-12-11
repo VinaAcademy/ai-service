@@ -1,31 +1,39 @@
-"""
-Dependency injection functions for services.
-
-Usage in endpoints:
-    from fastapi import Depends
-    from src.dependencies.services import get_quiz_service
-
-    @router.post("/create")
-    async def create_quiz(
-        request: CreateQuizRequest,
-        quiz_service: QuizService = Depends(get_quiz_service)
-    ):
-        return await quiz_service.generate_quiz(...)
-"""
-
 import logging
 from functools import lru_cache
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from src.clients.redis_client import RedisClient
 from src.config import get_settings
 from src.dependencies.db import get_database
 from src.repositories.lesson_repo import LessonRepository
 from src.repositories.quiz_repo import QuizRepository
-from src.services.quiz_service import QuizService, RetrieverFactory, MCQGenerator
+from src.services.quiz_service import QuizService, RetrieverFactory
+from src.services.task_service import QuizGenerationTask
 
 logger = logging.getLogger(__name__)
+
+# =============================
+#   Redis Client (Singleton)
+# =============================
+_redis_client_instance = None
+
+
+async def get_redis_client() -> RedisClient:
+    """
+    Get singleton RedisClient instance.
+    Connection is established on first call and reused.
+    """
+    global _redis_client_instance
+
+    if _redis_client_instance is None:
+        settings = get_settings()
+        _redis_client_instance = RedisClient(settings)
+        await _redis_client_instance.connect()
+        logger.info("RedisClient singleton created and connected")
+
+    return _redis_client_instance
 
 
 # =============================
@@ -39,16 +47,6 @@ def get_retriever_factory() -> RetrieverFactory:
     """
     settings = get_settings()
     return RetrieverFactory(settings)
-
-
-@lru_cache()
-def get_mcq_generator() -> MCQGenerator:
-    """
-    Get singleton MCQGenerator instance.
-    Uses Google Gemini for question generation with Pydantic parsing.
-    """
-    settings = get_settings()
-    return MCQGenerator(settings)
 
 
 # =============================
@@ -94,7 +92,21 @@ async def get_quiz_service(
     """
     return QuizService(
         retriever_factory=get_retriever_factory(),
-        mcq_generator=get_mcq_generator(),
         quiz_repository=quiz_repository,
         lesson_repository=lesson_repository
     )
+
+
+# =============================
+#   Task Service Dependencies
+# =============================
+async def get_quiz_generation_task(
+        redis_client: RedisClient = Depends(get_redis_client),
+) -> QuizGenerationTask:
+    """
+    Get QuizGenerationTask instance with Redis client injected.
+
+    Dependencies:
+        - RedisClient: For progress tracking and locking
+    """
+    return QuizGenerationTask(redis_client=redis_client)
