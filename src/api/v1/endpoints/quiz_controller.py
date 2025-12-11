@@ -144,8 +144,7 @@ async def create_quiz_async(
             response_data = CreateQuizAsyncResponse(
                 quiz_id=request.quiz_id,
                 message=(
-                    f"Bắt đầu tạo câu hỏi cho quiz {request.quiz_id}. "
-                    f"Sử dụng endpoint /quiz/progress/{request.quiz_id} để theo dõi tiến độ."
+                    f"Bắt đầu tạo câu hỏi cho bài quiz."
                 ),
             )
 
