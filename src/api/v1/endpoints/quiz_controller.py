@@ -143,9 +143,7 @@ async def create_quiz_async(
 
             response_data = CreateQuizAsyncResponse(
                 quiz_id=request.quiz_id,
-                message=(
-                    f"Bắt đầu tạo câu hỏi cho bài quiz."
-                ),
+                message=f"Bắt đầu tạo câu hỏi cho bài quiz.",
             )
 
             return ApiResponse[CreateQuizAsyncResponse].success(
