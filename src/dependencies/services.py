@@ -9,6 +9,8 @@ from src.config import get_settings
 from src.dependencies.db import get_database
 from src.repositories.lesson_repo import LessonRepository
 from src.repositories.quiz_repo import QuizRepository
+from src.services.agent_tools_service import AgentToolsService
+from src.services.chatbot_service import ChatbotService
 from src.services.quiz_service import QuizService, RetrieverFactory
 from src.services.task_service import QuizGenerationTask
 
@@ -110,3 +112,30 @@ async def get_quiz_generation_task(
         - RedisClient: For progress tracking and locking
     """
     return QuizGenerationTask(redis_client=redis_client)
+
+
+# =============================
+#   Chatbot Service Dependencies
+# =============================
+async def get_agent_tools_service(
+        lesson_repository: LessonRepository = Depends(get_lesson_repository),
+) -> AgentToolsService:
+    """
+    Get AgentToolsService instance with lesson repository injected.
+
+    Dependencies:
+        - LessonRepository: For retrieving lesson and course context
+    """
+    return AgentToolsService(lesson_repository=lesson_repository)
+
+
+async def get_chatbot_service(
+        agent_tools_service: AgentToolsService = Depends(get_agent_tools_service),
+) -> ChatbotService:
+    """
+    Get ChatbotService instance with agent tools injected.
+
+    Dependencies:
+        - AgentToolsService: Provides LangChain tools for course search and lesson context
+    """
+    return ChatbotService(agent_tools_service=agent_tools_service)

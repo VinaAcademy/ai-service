@@ -9,6 +9,8 @@ langchain-core
 langchain-community
 langchain-openai
 langchain-google-genai
+langchain-postgres
+langgraph-checkpoint-postgres
 
 rank_bm25
 faiss-cpu
