@@ -166,7 +166,8 @@ class AgentService:
             course_list = ["📚 **Các khóa học được đề xuất:**",
                            "Nếu bạn thấy khóa học đó không hợp lý thì bỏ ra khỏi danh sách gợi ý,",
                            "kết quả có thể không chính xác nên loại bỏ những khóa học không liên quan,",
-                           "đường link gợi ý sẽ là https://vnacademy.io.vn/courses/{slug},",
+                           "đường link xem chi tiết sẽ là https://vnacademy.io.vn/courses/{slug},",
+                           "đường link mua ngay sẽ là https://vnacademy.io.vn/courses/{slug}/checkout,",
                            "viết markdown thật đẹp và dễ nhìn cho từng khóa học nhé!",
                            "Dưới đây là danh sách các khóa học phù hợp với yêu cầu của bạn:\n"]
             for idx, course in enumerate(courses[:5], 1):
