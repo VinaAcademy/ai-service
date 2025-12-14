@@ -71,9 +71,6 @@ class AgentService:
         Returns:
             Middleware function
         """
-
-        service = self
-
         @dynamic_prompt
         def user_info_prompt(request: ModelRequest) -> str:
             context = request.runtime.context
