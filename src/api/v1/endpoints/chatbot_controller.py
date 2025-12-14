@@ -147,3 +147,27 @@ async def get_chat_history(
 
     history = await chatbot_service.get_chat_history(user_id)
     return ApiResponse.success(data=history)
+
+
+@router.delete(
+    "/history",
+    summary="Clear Chat History",
+    description="Clear chat history for the current user.",
+    response_model=ApiResponse[bool]
+)
+async def clear_chat_history(
+        chatbot_service: ChatbotService = Depends(get_chatbot_service),
+        user_info: dict = Depends(AuthService.get_user_info)
+) -> ApiResponse[bool]:
+    """
+    Clear chat history for the authenticated user.
+    """
+    user_id = user_info.get("user_id")
+    if not user_id:
+        raise ValueError("User ID is required to clear chat history.")
+
+    result = await chatbot_service.clear_chat_history(user_id)
+    if result:
+        return ApiResponse.success(data=True, message="Đã xóa lịch sử chat thành công.")
+    else:
+        return ApiResponse.error(message="Không thể xóa lịch sử chat.", status_code=500)

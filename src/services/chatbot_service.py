@@ -65,7 +65,7 @@ class ChatbotService:
         Returns:
             Configured agent executor
         """
-        checkpointer = MemorySaver()
+        self.checkpointer = MemorySaver()
         agent = create_agent(
             model=self.llm,
             tools=self.tools,
@@ -75,7 +75,7 @@ class ChatbotService:
                            trigger=("tokens", 4000),
                            keep=("messages", 10)
                        )],
-            checkpointer=checkpointer,
+            checkpointer=self.checkpointer,
             system_prompt=SystemMessage(content=PromptService.get_system_prompt()),
         )
 
@@ -189,3 +189,28 @@ class ChatbotService:
         except Exception as e:
             logger.error(f"❌ Error retrieving chat history: {str(e)}")
             return []
+
+    async def clear_chat_history(self, user_id: str) -> bool:
+        """
+        Clear chat history for a specific user.
+
+        Args:
+            user_id: The user's ID (used as thread_id)
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
+        try:
+            # For MemorySaver, we can directly access storage to delete the thread
+            if hasattr(self, 'checkpointer') and hasattr(self.checkpointer, 'storage'):
+                if user_id in self.checkpointer.storage:
+                    del self.checkpointer.storage[user_id]
+                    logger.info(f"Cleared chat history for user {user_id}")
+                else:
+                    logger.info(f"No chat history found for user {user_id}")
+                return True
+
+            return False
+        except Exception as e:
+            logger.error(f"❌ Error clearing chat history: {str(e)}")
+            return False
