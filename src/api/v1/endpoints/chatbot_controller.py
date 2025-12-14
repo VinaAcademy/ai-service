@@ -5,13 +5,14 @@ Handles chat interactions with context-aware AI agent
 
 import json
 import logging
-from typing import Optional
+from typing import Optional, List
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from starlette.responses import StreamingResponse
 
 from src.dependencies.services import get_chatbot_service
+from src.schemas.generic import ApiResponse
 from src.services.auth_service import AuthService
 from src.services.chatbot_service import ChatbotService, ChatContext
 
@@ -125,3 +126,24 @@ async def health_check(
         "llm_provider": chatbot_service.llm.__class__.__name__,
         "tools_count": len(chatbot_service.tools)
     }
+
+
+@router.get(
+    "/history",
+    summary="Get Chat History",
+    description="Retrieve chat history for the current user.",
+    response_model=ApiResponse[List[ChatMessage]]
+)
+async def get_chat_history(
+        chatbot_service: ChatbotService = Depends(get_chatbot_service),
+        user_info: dict = Depends(AuthService.get_user_info)
+) -> ApiResponse[List[ChatMessage]]:
+    """
+    Get chat history for the authenticated user.
+    """
+    user_id = user_info.get("user_id")
+    if not user_id:
+        raise ValueError("User ID is required to fetch chat history.")
+
+    history = await chatbot_service.get_chat_history(user_id)
+    return ApiResponse.success(data=history)

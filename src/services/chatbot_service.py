@@ -8,12 +8,14 @@ from dataclasses import dataclass
 from typing import Optional, List, AsyncGenerator
 
 from langchain.agents import create_agent
+from langchain.agents.middleware import SummarizationMiddleware
 from langchain_core.messages import SystemMessage
-from langgraph.checkpoint.postgres import PostgresSaver
+from langchain_core.runnables import RunnableConfig
+from langgraph.checkpoint.memory import MemorySaver
 
 from src.config import get_settings
 from src.factory.LLMFactory import LLMFactory
-from src.services.agent_tools_service import AgentToolsService
+from src.services.agent_tools_service import AgentService
 from src.services.prompt_service import PromptService
 
 logger = logging.getLogger(__name__)
@@ -49,10 +51,11 @@ class ChatbotService:
     - Vietnamese-first educational assistant
     """
 
-    def __init__(self, agent_tools_service: AgentToolsService):
+    def __init__(self, agent_tools_service: AgentService):
         self.agent_tools_service = agent_tools_service
         self.llm = LLMFactory.create(streaming=True)
         self.tools = agent_tools_service.create_langchain_tools()
+        self.middlewares = agent_tools_service.create_langchain_middlewares()
         self.agent = self._create_agent()
 
     def _create_agent(self):
@@ -62,14 +65,19 @@ class ChatbotService:
         Returns:
             Configured agent executor
         """
-        with PostgresSaver.from_conn_string(settings.sync_database_url) as checkpointer:
-            checkpointer.setup()
-            agent = create_agent(
-                model=self.llm,
-                tools=self.tools,
-                # checkpointer=checkpointer,
-                system_prompt=SystemMessage(content=PromptService.get_system_prompt()),
-            )
+        checkpointer = MemorySaver()
+        agent = create_agent(
+            model=self.llm,
+            tools=self.tools,
+            middleware=self.middlewares +
+                       [SummarizationMiddleware(
+                           model=self.llm,
+                           trigger=("tokens", 4000),
+                           keep=("messages", 10)
+                       )],
+            checkpointer=checkpointer,
+            system_prompt=SystemMessage(content=PromptService.get_system_prompt()),
+        )
 
         return agent
 
@@ -106,18 +114,16 @@ class ChatbotService:
                     "role": "user",
                     "content": user_message
                 }],
-                # "user_id": context.user_id,
-                # "lesson_id": context.lesson_id,
-                # "course_id": context.course_id,
             }
-            config = None
-            if context.user_id:
-                config = {"configurable": {"thread_id": context.user_id}}
+            config: RunnableConfig = {"configurable": {"thread_id": context.user_id}}
 
             logger.info(f"Streaming response for user {context.user_id}: {user_message[:50]}...")
 
             # Stream agent execution with state values
-            async for token, metadata in self.agent.astream(agent_input, config=config, stream_mode="messages"):
+            async for token, metadata in self.agent.astream(agent_input,
+                                                            config=config,
+                                                            context=context,
+                                                            stream_mode="messages"):
                 if metadata and metadata['langgraph_node'] == 'tools':
                     yield {
                         "type": "tool_call",
@@ -144,3 +150,42 @@ class ChatbotService:
                     "Vui lòng thử lại sau."
                 )
             }
+
+    async def get_chat_history(self, user_id: str) -> List[dict]:
+        """
+        Retrieve chat history for a specific user.
+
+        Args:
+            user_id: The user's ID (used as thread_id)
+
+        Returns:
+            List of messages
+        """
+        try:
+            config: RunnableConfig = {"configurable": {"thread_id": user_id}}
+            state = self.agent.get_state(config)
+            messages = state.values.get("messages", [])
+
+            # Format messages
+            formatted_messages = []
+            for msg in messages:
+                role = msg.type
+                if role == 'human':
+                    role = 'user'
+                elif role == 'ai':
+                    role = 'assistant'
+                else:
+                    continue  # Skip unknown roles
+                if msg.content == "":
+                    continue  # Skip empty messages
+
+                formatted_messages.append({
+                    "role": role,
+                    "content": msg.content,
+                    "id": getattr(msg, "id", None)
+                })
+
+            return formatted_messages
+        except Exception as e:
+            logger.error(f"❌ Error retrieving chat history: {str(e)}")
+            return []
