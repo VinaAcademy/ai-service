@@ -9,7 +9,8 @@ from uuid import UUID
 
 import httpx
 import py_eureka_client.eureka_client as eureka_client
-from langchain.tools import tool, ToolRuntime
+from langchain_core.tools import tool
+from langgraph.prebuilt import ToolRuntime
 
 from src.config import get_settings
 from src.repositories.lesson_repo import LessonRepository

@@ -5,8 +5,7 @@ pydantic
 pydantic-settings
 
 # LangChain/AI (only used packages)
-langchain-core
-langchain-community
+langchain
 langchain-openai
 langchain-google-genai
 langchain-postgres

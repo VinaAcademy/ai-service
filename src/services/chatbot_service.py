@@ -30,7 +30,10 @@ class ChatContext:
         lesson_id: Optional UUID of the lesson user is currently viewing
         course_id: Optional UUID of the course user is browsing
     """
-    user_id: str
+    user_id: Optional[str] = None
+    user_name: Optional[str] = None
+    user_email: Optional[str] = None
+    user_roles: Optional[List[str]] = None
     lesson_id: Optional[str] = None
     course_id: Optional[str] = None
 
@@ -73,8 +76,7 @@ class ChatbotService:
     async def stream_chat(
             self,
             user_message: str,
-            context: ChatContext,
-            conversation_history: Optional[List[dict]] = None
+            context: ChatContext
     ) -> AsyncGenerator[dict, None]:
         """
         Process a user message and stream the AI's response, including tool activities.
@@ -87,8 +89,6 @@ class ChatbotService:
             user_message (str): The input message from the user.
             context (ChatContext): The context of the conversation, including user identity
                                    and current navigation state (lesson/course).
-            conversation_history (Optional[List[dict]]): A list of previous messages to provide
-                                                       context for the LLM. Defaults to None.
 
         Yields:
             dict: Streaming events representing the agent's thought process and output.
@@ -110,12 +110,14 @@ class ChatbotService:
                 # "lesson_id": context.lesson_id,
                 # "course_id": context.course_id,
             }
-            # config = {"configurable": {"thread_id": context.user_id if context.user_id else None}}
+            config = None
+            if context.user_id:
+                config = {"configurable": {"thread_id": context.user_id}}
 
             logger.info(f"Streaming response for user {context.user_id}: {user_message[:50]}...")
 
             # Stream agent execution with state values
-            async for token, metadata in self.agent.astream(agent_input, stream_mode="messages"):
+            async for token, metadata in self.agent.astream(agent_input, config=config, stream_mode="messages"):
                 if metadata and metadata['langgraph_node'] == 'tools':
                     yield {
                         "type": "tool_call",

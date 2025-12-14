@@ -5,7 +5,7 @@ Handles chat interactions with context-aware AI agent
 
 import json
 import logging
-from typing import Optional, List
+from typing import Optional
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
@@ -34,11 +34,6 @@ class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=2000, description="User's message")
     lesson_id: Optional[str] = Field(None, description="Current lesson ID if user is in a lesson")
     course_id: Optional[str] = Field(None, description="Current course ID if user is browsing")
-    conversation_history: Optional[List[ChatMessage]] = Field(
-        default_factory=list,
-        max_length=20,
-        description="Previous conversation history (last 20 messages)"
-    )
 
 
 class ChatResponse(BaseModel):
@@ -55,7 +50,7 @@ class ChatResponse(BaseModel):
 async def chat_stream(
         request: ChatRequest,
         chatbot_service: ChatbotService = Depends(get_chatbot_service),
-        user_id: str = Depends(AuthService.get_current_user)
+        user_info: dict = Depends(AuthService.get_user_info)
 ) -> StreamingResponse:
     """
     Stream chat responses in real-time (Server-Sent Events).
@@ -74,29 +69,25 @@ async def chat_stream(
     ```
     """
     logger.info(
-        f"Received streaming chat request from user {user_id}: {request.message[:50]}..."
+        f"Received streaming chat request from user {user_info['email']}: {request.message[:50]}..."
     )
 
     # Create chat context
     context = ChatContext(
-        user_id=user_id,
+        user_id=user_info.get("user_id", None),
+        user_name=user_info.get("full_name", "Người dùng"),
+        user_email=user_info.get("email", ""),
+        user_roles=user_info.get("user_roles", []),
         lesson_id=request.lesson_id,
         course_id=request.course_id
     )
-
-    # Convert conversation history
-    history = [
-        {"role": msg.role, "content": msg.content}
-        for msg in (request.conversation_history or [])
-    ]
 
     async def event_stream():
         """Generate SSE stream with structured events"""
         try:
             async for event in chatbot_service.stream_chat(
                     user_message=request.message,
-                    context=context,
-                    conversation_history=history
+                    context=context
             ):
                 # Send event as JSON
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
