@@ -9,6 +9,8 @@ from src.config import get_settings
 from src.dependencies.db import get_database
 from src.repositories.lesson_repo import LessonRepository
 from src.repositories.quiz_repo import QuizRepository
+from src.services.agent_tools_service import AgentService
+from src.services.chatbot_service import ChatbotService
 from src.services.quiz_service import QuizService, RetrieverFactory
 from src.services.task_service import QuizGenerationTask
 
@@ -110,3 +112,32 @@ async def get_quiz_generation_task(
         - RedisClient: For progress tracking and locking
     """
     return QuizGenerationTask(redis_client=redis_client)
+
+
+# =============================
+#   Chatbot Service Dependencies
+# =============================
+_agent_tools_service_instance = None
+_chatbot_service_instance = None
+
+
+def get_agent_tools_service() -> AgentService:
+    """
+    Get singleton AgentToolsService instance.
+    """
+    global _agent_tools_service_instance
+    if _agent_tools_service_instance is None:
+        _agent_tools_service_instance = AgentService()
+    return _agent_tools_service_instance
+
+
+def get_chatbot_service(
+        agent_tools_service: AgentService = Depends(get_agent_tools_service),
+) -> ChatbotService:
+    """
+    Get singleton ChatbotService instance.
+    """
+    global _chatbot_service_instance
+    if _chatbot_service_instance is None:
+        _chatbot_service_instance = ChatbotService(agent_tools_service=agent_tools_service)
+    return _chatbot_service_instance
