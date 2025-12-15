@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.model.course_models import Course, Section, Lesson
+from src.model.course_models import Course, Section
 from src.repositories.base_repo import BaseRepository
 
 
