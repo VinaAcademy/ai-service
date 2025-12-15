@@ -123,6 +123,18 @@ class Lesson(Base, BaseMixin):
         return f"<Lesson(id={self.id}, title={self.title}, type={self.lesson_type})>"
 
 
+class Reading(Base):
+    __tablename__ = "reading"
+
+    # Primary key is same as lesson.id (shared primary key)
+    id = Column(
+        PGUUID(as_uuid=True),
+        ForeignKey("lessons.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+
+    content = Column(Text, nullable=True)
+
 class CourseInstructor(Base, BaseMixin):
     """
     CourseInstructor model matching Java CourseInstructor entity

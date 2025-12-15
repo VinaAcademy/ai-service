@@ -9,7 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from src.model.course_models import Course, Section, Lesson, CourseInstructor
+from src.model.course_models import Course, Section, Lesson, CourseInstructor, Reading
 from src.repositories.base_repo import BaseRepository
 
 
@@ -185,10 +185,12 @@ class LessonRepository(BaseRepository[Lesson]):
                 Lesson.lesson_type,
                 Lesson.description.label("lesson_description"),
                 Lesson.order_index.label("lesson_order"),
+                Reading.content.label("reading_content"),
             )
             .select_from(Lesson)
             .join(Section, Lesson.section_id == Section.id)
             .join(Course, Section.course_id == Course.id)
+            .outerjoin(Reading, Lesson.id == Reading.id)
             .where(Lesson.id == lesson_id)
         )
 
@@ -218,6 +220,7 @@ class LessonRepository(BaseRepository[Lesson]):
             "lesson_type": row.lesson_type if row.lesson_type else None,
             "lesson_description": row.lesson_description,
             "lesson_order": row.lesson_order,
+            "reading_content": row.reading_content,
         }
 
     async def is_instructor(self, lesson_id: UUID, user_id: UUID) -> bool:

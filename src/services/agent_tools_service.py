@@ -16,6 +16,7 @@ from langgraph.runtime import Runtime
 from src.config import get_settings
 from src.db.session import AsyncSessionLocal
 from src.repositories.lesson_repo import LessonRepository
+from src.repositories.course_repo import CourseRepository
 from src.utils.service_utils import search_courses_semantic
 
 logger = logging.getLogger(__name__)
@@ -30,8 +31,6 @@ class AgentService:
 
     def __init__(self):
         pass
-
-
 
     async def get_single_lesson_context(
             self, lesson_id: UUID
@@ -62,6 +61,29 @@ class AgentService:
             logger.error(
                 f"❌ Failed to get lesson context for lesson {lesson_id}: {str(e)}"
             )
+            return None
+
+    async def get_course_context(self, course_id: UUID) -> Optional[dict]:
+        """
+        Get full context for a specific course.
+
+        Args:
+            course_id: UUID of the course
+
+        Returns:
+            Dictionary with course details or None
+        """
+        try:
+            async with AsyncSessionLocal() as session:
+                course_repository = CourseRepository(session)
+                context = await course_repository.get_course_details(course_id)
+                if context:
+                    logger.info(f"✅ Retrieved course context for course {course_id}")
+                else:
+                    logger.warning(f"⚠️ No course found with ID {course_id}")
+                return context
+        except Exception as e:
+            logger.error(f"❌ Failed to get course context for course {course_id}: {str(e)}")
             return None
 
     def create_langchain_middlewares(self):
@@ -241,6 +263,11 @@ class AgentService:
                         f"📄 **Mô tả bài học:** {lesson_context['lesson_description']}"
                     )
 
+                if lesson_context.get('lesson_type') == 'READING' and lesson_context.get('reading_content'):
+                    context_text.append(
+                        f"\n📝 **Nội dung bài đọc:**\n{lesson_context['reading_content']}"
+                    )
+
                 return "\n".join(context_text)
 
             except ValueError:
@@ -249,4 +276,60 @@ class AgentService:
                 logger.error(f"Error getting lesson context: {str(e)}")
                 return f"❌ Lỗi khi lấy thông tin bài học: {str(e)}"
 
-        return [search_courses, get_lesson_context]
+        @tool
+        async def get_course_context(course_id: str, runtime: ToolRuntime) -> str:
+            """
+            Get course content and context when the user is viewing a specific course.
+
+            Use this tool when:
+            - User asks questions related to the course they are viewing
+            - User needs explanation about course structure or content
+            - Context shows user is in a course (course_id exists in runtime.context)
+
+            Args:
+                course_id: UUID of the course (provided in ChatContext)
+
+            Returns:
+                Formatted string with course context
+            """
+            # Check if course_id is in context
+            context = runtime.context
+            if not hasattr(context, 'course_id') or not context.course_id:
+                return "ℹ️ Không có khóa học cụ thể đang được xem. Vui lòng chọn một khóa học."
+
+            try:
+                # Parse course_id as UUID
+                course_uuid = UUID(course_id)
+
+                # Get course context
+                course_context = await service.get_course_context(course_id=course_uuid)
+
+                if not course_context:
+                    return "❌ Không tìm thấy thông tin khóa học."
+
+                # Format context
+                context_text = [
+                    f"📖 **Khóa học:** {course_context['course_name']}",
+                    f"ℹ️ **Mô tả:** {course_context['course_description'][:500]}...",
+                    f"🌐 **Ngôn ngữ:** {course_context['course_language']}",
+                    f"🎯 **Cấp độ:** {course_context['course_level']}",
+                    f"💰 **Giá:** {course_context['price']:,} VNĐ",
+                    f"⭐ **Đánh giá:** {course_context['rating']}/5",
+                    f"👥 **Học viên:** {course_context['total_student']}",
+                    "\n**Danh sách các phần học:**"
+                ]
+
+                for section in course_context['sections']:
+                    context_text.append(f"\n📂 **{section['title']}**")
+                    for lesson in section['lessons']:
+                        context_text.append(f"  - {lesson['title']} ({lesson['type']})")
+
+                return "\n".join(context_text)
+
+            except ValueError:
+                return "❌ ID khóa học không hợp lệ."
+            except Exception as e:
+                logger.error(f"Error getting course context: {str(e)}")
+                return f"❌ Lỗi khi lấy thông tin khóa học: {str(e)}"
+
+        return [search_courses, get_lesson_context, get_course_context]
