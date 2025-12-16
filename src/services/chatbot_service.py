@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from typing import Optional, List, AsyncGenerator
 
 from langchain.agents import create_agent
-from langchain.agents.middleware import SummarizationMiddleware
+from langchain_core.messages import SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.memory import MemorySaver
 
@@ -69,12 +69,7 @@ class ChatbotService:
         agent = create_agent(
             model=self.llm,
             tools=self.tools,
-            middleware=self.middlewares +
-                       [SummarizationMiddleware(
-                           model=self.llm,
-                           trigger=("tokens", 4000),
-                           keep=("messages", 10)
-                       )],
+            middleware=self.middlewares,
             checkpointer=self.checkpointer,
             system_prompt=PromptService.get_system_prompt(),
         )
@@ -111,7 +106,7 @@ class ChatbotService:
             # Prepare agent input
             agent_input = {
                 "messages": [
-                    {"role": "system", "content": PromptService.get_system_prompt()},
+                    SystemMessage(content=PromptService.get_system_prompt()),
                     {"role": "user", "content": user_message}
                 ],
             }
@@ -124,20 +119,42 @@ class ChatbotService:
                                                             config=config,
                                                             context=context,
                                                             stream_mode="messages"):
-                if metadata and metadata['langgraph_node'] == 'tools':
-                    yield {
-                        "type": "tool_call",
-                        "text": "Đang tìm kiếm...",
-                    }
-                if token.content_blocks:
-                    for block in token.content_blocks:
-                        if metadata['langgraph_node'] == 'tools':
-                            continue
+                if metadata:
+                    if metadata['langgraph_node'] == 'tools':
+                        yield {
+                            "type": "tool_call",
+                            "text": "Đang tìm kiếm...",
+                        }
+                    elif 'SummarizationMiddleware' in metadata['langgraph_node']:
+                        yield {
+                            "type": "summarization",
+                            "text": "Đang tóm tắt cuộc trò chuyện...",
+                        }
+                logger.debug(f"Token received: {token}, metadata: {metadata}")
+                if not token.content_blocks:
+                    continue
+
+                for block in token.content_blocks:
+                    if metadata['langgraph_node'] == 'tools':
+                        continue
+                    if block['type'] != 'tool_call_chunk':
                         yield {
                             "type": block['type'],
                             "text": block['text'] if 'text' in block
                             else 'Đang suy nghĩ...',
                         }
+
+                    if 'tool_call_chunks' not in token:
+                        continue
+
+                    for tool_chunk in token.tool_call_chunks:
+                        if 'name' in tool_chunk and tool_chunk['name']:
+                            yield {
+                                "type": "tool_call",
+                                "text": AgentService.get_agent_tool_text(tool_chunk['name'])
+                            }
+
+
             logger.info(f"Completed streaming response for user {context.user_id}")
 
 
@@ -169,6 +186,11 @@ class ChatbotService:
             # Format messages
             formatted_messages = []
             for msg in messages:
+                logger.debug(f"Message: {msg}")
+                # Skip summarization messages
+                if hasattr(msg, "metadata") and msg.metadata.get("langgraph_node") == "SummarizationMiddleware":
+                    continue
+
                 role = msg.type
                 if role == 'human':
                     role = 'user'

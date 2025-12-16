@@ -336,3 +336,19 @@ class AgentService:
                 return f"❌ Lỗi khi lấy thông tin khóa học: {str(e)}"
 
         return [search_courses, get_lesson_context, get_course_context]
+
+    @staticmethod
+    def get_agent_tool_text(tool_name: str) -> str:
+        """
+        Get the names of the tools provided by the agent.
+
+        Returns:
+            List of tool names
+        """
+        name_to_text = {
+            "search_courses": "Đang tìm kiếm khóa học...",
+            "get_lesson_context": "Đang lấy thông tin bài học...",
+            "get_course_context": "Đang lấy thông tin khóa học..."
+        }
+
+        return name_to_text.get(tool_name, "Đang xử lý...")
