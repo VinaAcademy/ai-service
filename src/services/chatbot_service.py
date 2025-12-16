@@ -38,6 +38,7 @@ class ChatContext:
     user_roles: Optional[List[str]] = None
     lesson_id: Optional[str] = None
     course_id: Optional[str] = None
+    custom_context: Optional[dict] = None
 
 
 class ChatbotService:

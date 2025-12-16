@@ -15,8 +15,8 @@ from langgraph.runtime import Runtime
 
 from src.config import get_settings
 from src.db.session import AsyncSessionLocal
-from src.repositories.lesson_repo import LessonRepository
 from src.repositories.course_repo import CourseRepository
+from src.repositories.lesson_repo import LessonRepository
 from src.utils.service_utils import search_courses_semantic
 
 logger = logging.getLogger(__name__)
@@ -94,15 +94,18 @@ class AgentService:
             Middleware function
         """
         @dynamic_prompt
-        def user_info_prompt(request: ModelRequest) -> str:
+        def context_info(request: ModelRequest) -> str:
             context = request.runtime.context
             user_info = {
                 "user_id": getattr(context, 'user_id', None),
                 "user_name": getattr(context, 'user_name', None),
                 "user_email": getattr(context, 'user_email', None),
                 "user_roles": getattr(context, 'user_roles', []),
+                "lesson_id": getattr(context, 'lesson_id', None),
+                "course_id": getattr(context, 'course_id', None),
+                "custom_context": getattr(context, 'custom_context', {}),
             }
-            return f"User Info: {user_info}"
+            return f"Context Info: {user_info}"
 
         @after_model
         def delete_old_messages(state: AgentState, runtime: Runtime) -> dict | None:
@@ -126,7 +129,7 @@ class AgentService:
                 )
             return None
 
-        return [user_info_prompt, delete_old_messages]
+        return [context_info, delete_old_messages]
 
     def create_langchain_tools(self):
         """
@@ -188,8 +191,8 @@ class AgentService:
             course_list = ["📚 **Các khóa học được đề xuất:**",
                            "Nếu bạn thấy khóa học đó không hợp lý thì bỏ ra khỏi danh sách gợi ý,",
                            "kết quả có thể không chính xác nên loại bỏ những khóa học không liên quan,",
-                           "đường link xem chi tiết sẽ là https://vnacademy.io.vn/courses/{slug},",
-                           "đường link mua ngay sẽ là https://vnacademy.io.vn/courses/{slug}/checkout,",
+                           "đường link xem chi tiết href sẽ là /courses/{slug},",
+                           "đường link mua ngay href sẽ là /courses/{slug}/checkout,",
                            "viết markdown thật đẹp và dễ nhìn cho từng khóa học nhé!",
                            "Dưới đây là danh sách các khóa học phù hợp với yêu cầu của bạn:\n"]
             for idx, course in enumerate(courses[:5], 1):
