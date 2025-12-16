@@ -9,7 +9,6 @@ from typing import Optional, List, AsyncGenerator
 
 from langchain.agents import create_agent
 from langchain.agents.middleware import SummarizationMiddleware
-from langchain_core.messages import SystemMessage
 from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.memory import MemorySaver
 
@@ -112,7 +111,7 @@ class ChatbotService:
             # Prepare agent input
             agent_input = {
                 "messages": [
-                    SystemMessage(content=PromptService.get_system_prompt()),
+                    {"role": "system", "content": PromptService.get_system_prompt()},
                     {"role": "user", "content": user_message}
                 ],
             }
