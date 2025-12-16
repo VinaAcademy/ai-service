@@ -77,7 +77,7 @@ class ChatbotService:
                            keep=("messages", 10)
                        )],
             checkpointer=self.checkpointer,
-            system_prompt=SystemMessage(content=PromptService.get_system_prompt()),
+            system_prompt=PromptService.get_system_prompt(),
         )
 
         return agent
@@ -111,10 +111,10 @@ class ChatbotService:
         try:
             # Prepare agent input
             agent_input = {
-                "messages": [{
-                    "role": "user",
-                    "content": user_message
-                }],
+                "messages": [
+                    SystemMessage(content=PromptService.get_system_prompt()),
+                    {"role": "user", "content": user_message}
+                ],
             }
             config: RunnableConfig = {"configurable": {"thread_id": context.user_id}}
 
