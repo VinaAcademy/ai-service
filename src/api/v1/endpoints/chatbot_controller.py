@@ -35,6 +35,7 @@ class ChatRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=2000, description="User's message")
     lesson_id: Optional[str] = Field(None, description="Current lesson ID if user is in a lesson")
     course_id: Optional[str] = Field(None, description="Current course ID if user is browsing")
+    custom_context: Optional[dict] = Field(None, description="Custom context")
 
 
 class ChatResponse(BaseModel):
@@ -80,7 +81,8 @@ async def chat_stream(
         user_email=user_info.get("email", ""),
         user_roles=user_info.get("user_roles", []),
         lesson_id=request.lesson_id,
-        course_id=request.course_id
+        course_id=request.course_id,
+        custom_context=request.custom_context or {}
     )
 
     async def event_stream():
