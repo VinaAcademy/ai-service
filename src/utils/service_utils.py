@@ -1,10 +1,54 @@
 import logging
-from typing import Optional
+from typing import Optional, Dict
 
 import httpx
 import py_eureka_client.eureka_client as eureka_client
 
 logger = logging.getLogger(__name__)
+
+base_url = 'https://api.vnacademy.io.vn'
+
+
+async def call_api(
+        method: str,
+        endpoint: str,
+        params: Optional[Dict] = None,
+        timeout: float = 30.0,
+) -> Dict:
+    """
+    Generic async API caller
+    """
+    if not base_url:
+        return {
+            "status": "ERROR",
+            "message": "Service unavailable",
+            "data": None
+        }
+
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            response = await client.request(
+                method=method,
+                url=f"{base_url}{endpoint}",
+                params=params
+            )
+            response.raise_for_status()
+            return response.json()
+
+    except httpx.HTTPError as e:
+        logger.error(f"❌ HTTP error: {str(e)}")
+        return {
+            "status": "ERROR",
+            "message": f"Request failed: {str(e)}",
+            "data": None
+        }
+    except Exception as e:
+        logger.error(f"❌ Unexpected error: {str(e)}")
+        return {
+            "status": "ERROR",
+            "message": f"Unexpected error: {str(e)}",
+            "data": None
+        }
 
 
 async def get_vector_search_service_url() -> Optional[str]:
@@ -31,53 +75,54 @@ async def get_vector_search_service_url() -> Optional[str]:
         return None
 
 
-async def search_courses_semantic(query: str, filter: dict, page: int = 0, size: int = 9) -> dict:
+async def search_courses_semantic(
+        query: str,
+        filters: dict,
+        page: int = 0,
+        size: int = 9
+) -> dict:
     """
-    Search courses using semantic search via VECTOR-SEARCH-SERVICE.
-
-    Args:
-        query: Search query (e.g., "Học python")
-        page: Page number (default: 0)
-        size: Page size (default: 9)
-
-    Returns:
-        API response with course list and pagination info
-        :param filter:
+    Search courses using semantic search
     """
-    # base_url = await get_vector_search_service_url()
-    base_url = 'https://api.vnacademy.io.vn'
-    if not base_url:
-        return {
-            "status": "ERROR",
-            "message": "Vector search service unavailable",
-            "data": None
-        }
+    params = {
+        "semantic": "true",
+        "keyword": query,
+        "page": page,
+        "size": size,
+        **filters
+    }
 
-    try:
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.get(
-                f"{base_url}/api/v1/courses/aisearch",
-                params={
-                    "semantic": "true",
-                    "keyword": query,
-                    "page": page,
-                    "size": size,
-                    **filter
-                }
-            )
-            response.raise_for_status()
-            return response.json()
-    except httpx.HTTPError as e:
-        logger.error(f"❌ HTTP error during semantic search: {str(e)}")
-        return {
-            "status": "ERROR",
-            "message": f"Search failed: {str(e)}",
-            "data": None
-        }
-    except Exception as e:
-        logger.error(f"❌ Unexpected error during semantic search: {str(e)}")
-        return {
-            "status": "ERROR",
-            "message": f"Unexpected error: {str(e)}",
-            "data": None
-        }
+    return await call_api(
+        method="GET",
+        endpoint="/api/v1/courses/aisearch",
+        params=params
+    )
+
+
+async def search_courses_keyword(
+        keyword: Optional[str] = None,
+        filters=None,
+        status: str = "PUBLISHED",
+        page: int = 0,
+        size: int = 5,
+        sort: str = "rating,desc"
+) -> dict:
+    """
+    Get course list with filter & sorting
+    """
+    params = {
+        "status": status,
+        "page": page,
+        "size": size,
+        "sort": sort,
+        **filters
+    }
+
+    if keyword:
+        params["keyword"] = keyword
+
+    return await call_api(
+        method="GET",
+        endpoint="/api/v1/courses",
+        params=params
+    )
