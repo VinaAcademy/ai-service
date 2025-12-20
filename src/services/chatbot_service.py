@@ -3,6 +3,7 @@ Chatbot Service - AI Agent with LangGraph and context-aware tools
 Handles conversational AI with course discovery and lesson context retrieval
 """
 
+import asyncio
 import logging
 from dataclasses import dataclass
 from typing import Optional, List, AsyncGenerator
@@ -130,7 +131,6 @@ class ChatbotService:
                             "type": "summarization",
                             "text": "Đang tóm tắt cuộc trò chuyện...",
                         }
-                logger.debug(f"Token received: {token}, metadata: {metadata}")
                 if not token.content_blocks:
                     continue
 
@@ -157,6 +157,9 @@ class ChatbotService:
 
             logger.info(f"Completed streaming response for user {context.user_id}")
 
+        except asyncio.CancelledError:
+            logger.info(f"Chat stream cancelled for user {context.user_id}")
+            raise
 
         except Exception as e:
             logger.error(f"❌ Error in stream chat: {str(e)}", exc_info=True)

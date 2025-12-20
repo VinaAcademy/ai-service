@@ -17,7 +17,8 @@ from src.config import get_settings
 from src.db.session import AsyncSessionLocal
 from src.repositories.course_repo import CourseRepository
 from src.repositories.lesson_repo import LessonRepository
-from src.utils.service_utils import search_courses_semantic
+from src.services.prompt_service import PromptService
+from src.utils.service_utils import search_courses_semantic, search_courses_keyword
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
@@ -149,25 +150,30 @@ class AgentService:
                                  max_price: Optional[float] = None,
                                  min_rating: Optional[float] = None) -> str:
             """
-            Search for relevant courses by topic or keyword using semantic AI search.
+            Tìm kiếm và gợi ý khóa học theo chủ đề/ngữ cảnh người dùng.
 
-            Use this tool when the user asks about:
-            - Course recommendations (e.g., "Tôi muốn học Python")
-            - Finding courses by topic (e.g., "Khóa học về machine learning")
-            - General course discovery
+            Khi nào dùng:
+            - Người dùng hỏi: “Muốn học X”, “Khóa học về Y”, “Gợi ý khóa học Z”.
+            - Không dùng để lấy nội dung bài học cụ thể (dùng get_lesson_context) hoặc chi tiết khóa học (dùng get_course_context).
 
-            IMPORTANT: Only provide optional parameters (course_level, min_price, max_price, min_rating)
-            if the user EXPLICITLY mentions them in their request. Do not guess or infer these values.
+            Quy tắc dùng bộ lọc (KHÔNG SUY DIỄN):
+            - Chỉ truyền `course_level`, `min_price`, `max_price`, `min_rating` khi người dùng NÓI RÕ trong câu hỏi.
+            - Không tự đoán cấp độ, giá tiền hay đánh giá. Nếu không thấy trong yêu cầu, bỏ qua các tham số này.
 
-            Args:
-                query: User's search query in Vietnamese or English
-                course_level: Optional filter for course level (e.g., "BEGINNER", "INTERMEDIATE", "ADVANCED"). Only use if user specifies level.
-                min_price: Optional minimum price. Only use if user specifies price range.
-                max_price: Optional maximum price. Only use if user specifies price range.
-                min_rating: Optional minimum rating. Only use if user specifies rating.
+            Tham số:
+            - query: Câu hỏi/từ khóa của người dùng (Việt/Anh).
+            - course_level: "BEGINNER" | "INTERMEDIATE" | "ADVANCED" (chỉ khi người dùng yêu cầu).
+            - min_price / max_price: Khoảng giá (chỉ khi người dùng yêu cầu).
+            - min_rating: Điểm đánh giá tối thiểu (chỉ khi người dùng yêu cầu).
 
-            Returns:
-                Formatted string with course recommendations
+            Ví dụ:
+            - “Gợi ý khóa học Python cho người mới bắt đầu, giá dưới 500k” → set course_level="BEGINNER", max_price=500000
+            - “Khóa học Machine Learning chất lượng” → chỉ truyền query, semantically=True
+            - “Tìm các khóa Java rating từ 4.5 trở lên” → set min_rating=4.5
+
+            Kết quả:
+            - Trả về chuỗi văn bản đã format (tên, cấp độ, danh mục, giảng viên, giá, đánh giá...).
+            - Nếu không tìm thấy: trả về thông báo lỗi thân thiện bằng tiếng Việt.
             """
             filters = {
                 "courseLevel": course_level,
@@ -178,7 +184,12 @@ class AgentService:
             # Remove None values
             filters = {k: v for k, v in filters.items() if v is not None}
 
-            result = await search_courses_semantic(query=query, filter=filters, size=5)
+            result = await search_courses_keyword(keyword=query, size=5, filters=filters)
+            if result['status'] == 'SUCCESS' and result.get('data') and result['data'].get('content', []):
+                courses = result['data'].get('content')
+                return PromptService.get_courses_recommend_prompt(courses)
+
+            result = await search_courses_semantic(query=query, filters=filters, size=5)
 
             if result["status"] != "SUCCESS" or not result.get("data"):
                 return "❌ Không tìm thấy khóa học phù hợp. Vui lòng thử lại với từ khóa khác."
@@ -187,33 +198,7 @@ class AgentService:
             if not courses:
                 return "❌ Không có khóa học nào phù hợp với yêu cầu của bạn."
 
-            # Format course list
-            course_list = ["📚 **Các khóa học được đề xuất:**",
-                           "Nếu bạn thấy khóa học đó không hợp lý thì bỏ ra khỏi danh sách gợi ý,",
-                           "kết quả có thể không chính xác nên loại bỏ những khóa học không liên quan,",
-                           "đường link xem chi tiết href sẽ là https://vnacademy.io.vn/courses/{slug},",
-                           "đường link mua ngay href sẽ là https://vnacademy.io.vn/courses/{slug}/checkout,",
-                           "viết markdown thật đẹp và dễ nhìn cho từng khóa học nhé!",
-                           "Dưới đây là danh sách các khóa học phù hợp với yêu cầu của bạn:\n"]
-            for idx, course in enumerate(courses[:5], 1):
-                image_url = course.get('image', '')
-                if image_url and not image_url.startswith(('http://', 'https://')):
-                    image_url = f"https://vnacademy.io.vn/api/images/view/{image_url}"
-
-                course_list.append(
-                    f"{idx}. **{course['name']}** ({course['level']})\n"
-                    f"   - Hình ảnh: {image_url}\n"
-                    f"   - Danh mục: {course.get('categoryName', 'N/A')}\n"
-                    f"   - Giảng viên: {course.get('instructorName', 'N/A')}\n"
-                    f"   - Mô tả: {course['description'][:500]}...\n"
-                    f"   - Ngôn ngữ: {course['language']}\n"
-                    f"   - Giá: {course['price']:,} VNĐ\n"
-                    f"   - Đánh giá: {course['rating']}/5 ({course['totalRating']} đánh giá)\n"
-                    f"   - Học viên: {course['totalStudent']} người\n"
-                    f"   - Slug: {course.get('slug', 'N/A')}\n"
-                )
-
-            return "\n".join(course_list)
+            return PromptService.get_courses_recommend_prompt(courses)
 
         @tool
         async def get_lesson_context(lesson_id: str, runtime: ToolRuntime) -> str:

@@ -28,8 +28,8 @@ class Settings(BaseSettings):
     google_api_key: str = ""
     hugging_api_key: str = ""
     llm_provider: str = "google"
-    openai_model_name: str = "gpt-3.5-turbo"
-    gemini_model_name: str = "gemini-2.0-flash"
+    openai_model_name: str = "gpt-4o-mini"
+    gemini_model_name: str = "gemini-1.5-flash"
     temperature: float = 0.7
     max_tokens: int = 500
     embedding_model: str = "text-embedding-3-small"

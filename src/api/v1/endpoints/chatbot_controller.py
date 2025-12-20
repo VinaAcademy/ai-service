@@ -3,6 +3,7 @@ Chatbot Controller - REST API endpoints for AI chatbot
 Handles chat interactions with context-aware AI agent
 """
 
+import asyncio
 import json
 import logging
 from typing import Optional, List
@@ -94,6 +95,9 @@ async def chat_stream(
             ):
                 # Send event as JSON
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+        except asyncio.CancelledError:
+            logger.info(f"User {user_info.get('email')} stopped the chat stream.")
+            raise
         except Exception as e:
             logger.error(f"Error in streaming chat: {str(e)}")
             error_event = {
