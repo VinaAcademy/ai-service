@@ -226,7 +226,7 @@ class QuizService:
         )
 
         logger.info("Generating quiz questions via LLM...")
-        raw_output = self._llm.invoke(prompt)
+        raw_output = await self._llm.ainvoke(prompt)
         logger.debug("LLM response received, parsing output...")
 
         # Extract content if output is an AIMessage (ChatModel)

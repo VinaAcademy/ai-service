@@ -7,7 +7,6 @@ Features:
     - Integration with Redis for distributed locking
 """
 
-import asyncio
 import logging
 from uuid import UUID
 
@@ -100,9 +99,6 @@ class QuizGenerationTask:
                 message="Đang lưu câu hỏi vào cơ sở dữ liệu...",
                 total_questions=len(questions_data)
             )
-
-            # Simulate slight delay for final processing
-            await asyncio.sleep(0.5)
 
             # Update progress: Completed
             await self._redis_client.set_progress(
